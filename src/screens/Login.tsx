@@ -88,7 +88,7 @@ const Login: React.FC<Props> = ({ navigation }) => {
         </View>
 
         <TouchableOpacity
-          className="bg-purple-600 rounded-xl py-4 mb-4 shadow-lg"
+          className="bg-primary rounded-xl py-4 mb-4 shadow-lg"
           onPress={handleLogin}
         >
           <Text className="text-white text-center text-lg font-semibold">
