@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,100 +7,96 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
   Alert,
-} from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+} from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import Button from "../components/Button";
 
-type RootStackParamList = {
-  Login: undefined;
-  SignUp: undefined;
-  MainTabs: undefined;
-};
-
-type LoginScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'Login'
->;
-
-interface Props {
-  navigation: LoginScreenNavigationProp;
+interface LoginProps {
+  navigation: any; // You can replace with your stack type if defined
 }
 
-const Login: React.FC<Props> = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+const Login: React.FC<LoginProps> = ({ navigation }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleLogin = () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
-    // Navigate to main app after successful login
-    navigation.replace('MainTabs');
+    navigation.replace("MainTabs");
   };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-purple-50"
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1 bg-white"
     >
       <ScrollView
-        contentContainerClassName="flex-grow justify-center px-6 py-12"
+        contentContainerClassName="flex-grow justify-center items-center px-8"
         keyboardShouldPersistTaps="handled"
       >
-        <View className="mb-8 items-center">
-          <Text className="text-4xl font-bold text-purple-600 mb-2">
-            Lumora
-          </Text>
-          <Text className="text-lg text-gray-600">
-            Your Mental Health Companion
-          </Text>
-        </View>
+        <View className="w-full max-w-[350px]">
+          {/* Logo */}
+          <View className="items-center mb-8 justify-center">
+            <Image
+              source={require("../assets/Lumora.png")}
+              className="w-35 h-35 mb-4"
+              resizeMode="contain"
+            />
+                </View>
 
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-800 mb-2">Welcome Back</Text>
-          <Text className="text-gray-600">Sign in to continue your journey</Text>
-        </View>
+          {/* Welcome text */}
+          <View className="mb-8">
+            <Text className="text-2xl font-semibold text-gray-800 mb-1 text-center">
+             Your mental health companion
+            </Text>
+          </View>
 
-        <View className="mb-4">
-          <Text className="text-sm font-semibold text-gray-700 mb-2">Email</Text>
-          <TextInput
-            className="bg-white rounded-xl px-4 py-4 border border-gray-200 text-base"
-            placeholder="Enter your email"
-            placeholderTextColor="#9CA3AF"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
+          {/* Email input */}
+          <View className="mb-4 flex-row items-center border border-gray-300 rounded-md px-3 bg-white">
+            <Ionicons name="mail-outline" size={18} color="#9CA3AF" />
+            <TextInput
+              className="flex-1 px-2 py-3 text-gray-800"
+              placeholder="Email / Username"
+              placeholderTextColor="#9CA3AF"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </View>
 
-        <View className="mb-6">
-          <Text className="text-sm font-semibold text-gray-700 mb-2">Password</Text>
-          <TextInput
-            className="bg-white rounded-xl px-4 py-4 border border-gray-200 text-base"
-            placeholder="Enter your password"
-            placeholderTextColor="#9CA3AF"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-        </View>
+          {/* Password input */}
+          <View className="mb-4 flex-row items-center border border-gray-300 rounded-md px-3 bg-white">
+            <Ionicons name="lock-closed-outline" size={18} color="#9CA3AF" />
+            <TextInput
+              className="flex-1 px-2 py-3 text-gray-800"
+              placeholder="Password"
+              placeholderTextColor="#9CA3AF"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
 
-        <TouchableOpacity
-          className="bg-primary rounded-xl py-4 mb-4 shadow-lg"
-          onPress={handleLogin}
-        >
-          <Text className="text-white text-center text-lg font-semibold">
-            Sign In
-          </Text>
-        </TouchableOpacity>
-
-        <View className="flex-row justify-center items-center">
-          <Text className="text-gray-600">Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-            <Text className="text-purple-600 font-semibold">Sign Up</Text>
+          {/* Forgot password */}
+          <TouchableOpacity className="mb-6 self-end" onPress={() => {}}>
+            <Text className="text-blue-600 text-sm">Forgot password?</Text>
           </TouchableOpacity>
+
+          {/* Log in button */}
+          <Button title="Log in" onPress={handleLogin} />
+
+          {/* Signup link */}
+          <View className="flex-row justify-center items-center mt-6">
+            <Text className="text-gray-600">Don’t have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+              <Text className="text-blue-600 font-semibold">Sign up</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

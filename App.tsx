@@ -5,6 +5,7 @@
  * @format
  */
 
+import './global.css';
 import React from 'react';
 import { StatusBar, useColorScheme } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';

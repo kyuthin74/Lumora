@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity, Text, GestureResponderEvent } from "react-native";
+import { Pressable, Text, GestureResponderEvent } from "react-native";
 
 type ButtonProps = {
   title: string;
@@ -8,12 +8,12 @@ type ButtonProps = {
 
 const Button: React.FC<ButtonProps> = ({ title, onPress }) => {
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      className="bg-primary rounded-xl px-10 py-3 items-center justify-center"
+      className="bg-primary w-[350px] p-[10px] rounded-xl items-center justify-center"
     >
       <Text className="text-white text-lg font-semibold">{title}</Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 

@@ -8,8 +8,10 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Image,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Button from '../components/Button';
 
 type RootStackParamList = {
   Login: undefined;
@@ -58,24 +60,31 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         contentContainerClassName="flex-grow justify-center px-6 py-12"
         keyboardShouldPersistTaps="handled"
       >
-        <View className="mb-8 items-center">
-          <Text className="text-4xl font-bold text-purple-600 mb-2">
-            Lumora
-          </Text>
+        <View className="w-full max-w-[350px] mx-auto">
+          {/* Logo */}
+          <View className="mb-8 items-center justify-center">
+            <Image
+              source={require('../assets/Lumora.png')}
+              className="w-35 h-35 mb-4"
+              resizeMode="contain"
+            />
           <Text className="text-lg text-gray-600">
             Start Your Wellness Journey
           </Text>
         </View>
 
         <View className="mb-6">
-          <Text className="text-2xl font-bold text-gray-800 mb-2">Create Account</Text>
-          <Text className="text-gray-600">Join us and take control of your mental health</Text>
+          <Text className="mb-2 text-2xl font-bold text-gray-800">
+            Create Account
+          </Text>
         </View>
 
         <View className="mb-4">
-          <Text className="text-sm font-semibold text-gray-700 mb-2">Full Name</Text>
+          <Text className="mb-2 text-sm font-semibold text-gray-700">
+            Full Name
+          </Text>
           <TextInput
-            className="bg-white rounded-xl px-4 py-4 border border-gray-200 text-base"
+            className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-base"
             placeholder="Enter your full name"
             placeholderTextColor="#9CA3AF"
             value={name}
@@ -84,9 +93,11 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         </View>
 
         <View className="mb-4">
-          <Text className="text-sm font-semibold text-gray-700 mb-2">Email</Text>
+          <Text className="mb-2 text-sm font-semibold text-gray-700">
+            Email
+          </Text>
           <TextInput
-            className="bg-white rounded-xl px-4 py-4 border border-gray-200 text-base"
+            className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-base"
             placeholder="Enter your email"
             placeholderTextColor="#9CA3AF"
             value={email}
@@ -97,9 +108,11 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         </View>
 
         <View className="mb-4">
-          <Text className="text-sm font-semibold text-gray-700 mb-2">Password</Text>
+          <Text className="mb-2 text-sm font-semibold text-gray-700">
+            Password
+          </Text>
           <TextInput
-            className="bg-white rounded-xl px-4 py-4 border border-gray-200 text-base"
+            className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-base"
             placeholder="Create a password"
             placeholderTextColor="#9CA3AF"
             value={password}
@@ -109,9 +122,11 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
         </View>
 
         <View className="mb-6">
-          <Text className="text-sm font-semibold text-gray-700 mb-2">Confirm Password</Text>
+          <Text className="mb-2 text-sm font-semibold text-gray-700">
+            Confirm Password
+          </Text>
           <TextInput
-            className="bg-white rounded-xl px-4 py-4 border border-gray-200 text-base"
+            className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-base"
             placeholder="Confirm your password"
             placeholderTextColor="#9CA3AF"
             value={confirmPassword}
@@ -120,21 +135,17 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
           />
         </View>
 
-        <TouchableOpacity
-          className="bg-purple-600 rounded-xl py-4 mb-4 shadow-lg"
-          onPress={handleSignUp}
-        >
-          <Text className="text-white text-center text-lg font-semibold">
-            Sign Up
-          </Text>
-        </TouchableOpacity>
+        {/* Log in button */}
+        <Button title="Sign Up" onPress={handleSignUp} />
 
-        <View className="flex-row justify-center items-center">
+        <View className="flex-row items-center justify-center mt-2">
           <Text className="text-gray-600">Already have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text className="text-purple-600 font-semibold">Sign In</Text>
+            <Text className="font-semibold text-blue-600">Sign In</Text>
           </TouchableOpacity>
         </View>
+        </View>
+      
       </ScrollView>
     </KeyboardAvoidingView>
   );
