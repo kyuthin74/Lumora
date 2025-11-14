@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,17 +7,24 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image,
   Alert,
-} from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import Button from "../components/Button";
+  Image,
+} from 'react-native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/AppNavigator';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import Button from '../components/Button';
 
-interface LoginProps {
-  navigation: any; // You can replace with your stack type if defined
+type LoginScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Login'
+>;
+
+interface Props {
+  navigation: LoginScreenNavigationProp;
 }
 
-const Login: React.FC<LoginProps> = ({ navigation }) => {
+const Login: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 

@@ -14,12 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Button from '../components/Button';
 import EmergencyContact from './EmergencyContact';
 
-type RootStackParamList = {
-  Login: undefined;
-  SignUp: undefined;
-  EmergencyContact: undefined;
-  MainTabs: undefined;
-};
+import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type SignUpScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,

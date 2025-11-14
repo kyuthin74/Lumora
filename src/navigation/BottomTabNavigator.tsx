@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Home from '../screens/Home';
 import Mood from '../screens/Mood';
@@ -27,35 +28,43 @@ const BottomTabNavigator: React.FC = () => {
         name="Home"
         component={Home}
         options={{
-          tabBarIcon: () => <Text style={{ fontSize: 24 }}>🏠</Text>,
+          tabBarIcon: ({ color, size }) => <Icon name="home" color={color} size={size ?? 24} />,
         }}
       />
       <Tab.Screen
         name="Mood"
         component={Mood}
         options={{
-          tabBarIcon: () => <Text style={{ fontSize: 24 }}>😊</Text>,
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="smile-o" color={color} size={size ?? 24} />
+          ),
         }}
       />
       <Tab.Screen
         name="Analysis"
         component={Analysis}
         options={{
-          tabBarIcon: () => <Text style={{ fontSize: 24 }}>📊</Text>,
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="line-chart" color={color} size={size ?? 24} />
+          ),
         }}
       />
       <Tab.Screen
         name="Chatbot"
         component={Chatbot}
         options={{
-          tabBarIcon: () => <Text style={{ fontSize: 24 }}>💬</Text>,
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="comments" color={color} size={size ?? 24} />
+          ),
         }}
       />
       <Tab.Screen
         name="Profile"
         component={Profile}
         options={{
-          tabBarIcon: () => <Text style={{ fontSize: 24 }}>👤</Text>,
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="user" color={color} size={size ?? 24} />
+          ),
         }}
       />
     </Tab.Navigator>
