@@ -19,6 +19,9 @@ module.exports = {
           dark: '#0f172a',
         },
       },
+      fontFamily: {
+        arimo: ['Arimo-Regular'],
+      },
     },
   },
   plugins: [],

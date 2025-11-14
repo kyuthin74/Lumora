@@ -12,7 +12,7 @@ const Button: React.FC<ButtonProps> = ({ title, onPress }) => {
       onPress={onPress}
       className="bg-primary w-[350px] p-[10px] rounded-xl items-center justify-center"
     >
-      <Text className="text-white text-lg font-semibold">{title}</Text>
+      <Text className="text-white text-xl font-semibold">{title}</Text>
     </Pressable>
   );
 };

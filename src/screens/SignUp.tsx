@@ -12,12 +12,7 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Button from '../components/Button';
-
-type RootStackParamList = {
-  Login: undefined;
-  SignUp: undefined;
-  MainTabs: undefined;
-};
+import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type SignUpScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,

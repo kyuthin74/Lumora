@@ -1,3 +1,14 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+	Text {
+		font-family: Arimo-Regular;
+		font-weight: 400;
+	}
+	TextInput {
+		font-family: Arimo-Regular;
+		font-weight: 400;
+	}
+}

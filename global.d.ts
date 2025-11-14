@@ -23,3 +23,9 @@ declare module 'react-native' {
     className?: string;
   }
 }
+
+declare module 'react-native-safe-area-context' {
+  interface SafeAreaViewProps {
+    className?: string;
+  }
+}
