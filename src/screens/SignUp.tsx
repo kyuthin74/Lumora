@@ -12,10 +12,12 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Button from '../components/Button';
+import EmergencyContact from './EmergencyContact';
 
 type RootStackParamList = {
   Login: undefined;
   SignUp: undefined;
+  EmergencyContact: undefined;
   MainTabs: undefined;
 };
 
@@ -48,7 +50,8 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
       return;
     }
     // Navigate to main app after successful signup
-    navigation.replace('MainTabs');
+    console.log("Navigating to EmergencyContact...")
+    navigation.replace('EmergencyContact');
   };
 
   return (
