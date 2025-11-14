@@ -20,7 +20,7 @@ const SplashIntro: React.FC<Props> = ({ navigation }) => {
       <View className="flex-1 items-center justify-between px-10 pb-10 pt-20">
         <Image
           source={require('../assets/Lumora.png')}
-          className="top-20 h-[250px] w-[250px] "
+          className="top-20 h-[200px] w-[200px] "
           resizeMode="contain"
         />
 
