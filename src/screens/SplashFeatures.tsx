@@ -23,22 +23,22 @@ const featureItems: Array<{
   {
     id: 'mood',
     title: 'Daily Mood Logging',
-    imageSrc: require('../assets/Neutral.png'),
+    imageSrc: require('../assets/mood/neutral.png'),
   },
   {
     id: 'nudges',
     title: 'Science-based Nudges',
-    imageSrc: require('../assets/Satisfied.png'),
+    imageSrc: require('../assets/mood/satisfied.png'),
   },
   {
     id: 'analysis',
     title: 'Weekly Mood Analysis',
-    imageSrc: require('../assets/Happy.png'),
+    imageSrc: require('../assets/mood/happy.png'),
   },
   {
     id: 'risk',
     title: 'AI-predicted Depression Risk',
-    imageSrc: require('../assets/Energetic.png'),
+    imageSrc: require('../assets/mood/energetic.png'),
   },
 ];
 

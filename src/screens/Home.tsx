@@ -1,7 +1,17 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 
-const Home: React.FC = () => {
+type SignUpScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'SignUp'
+>;
+
+interface Props {
+  navigation: SignUpScreenNavigationProp;
+}
+const Home: React.FC<Props> = ({navigation}) => {
   return (
     <ScrollView className="flex-1 bg-gray-50">
       <View className="px-6 pt-12 pb-6">
@@ -26,6 +36,30 @@ const Home: React.FC = () => {
             <Text className="text-white font-semibold">Log Mood →</Text>
           </View>
         </TouchableOpacity>
+
+        {/* Take depression risk test */}
+        <View className="mb-6">
+          <View className="flex-row justify-between items-center">
+            {/* Text Card */}
+              <View className="bg-white rounded-xl p-4 flex-1 mr-3 shadow-sm">
+                <Text className="text-2xl font-bold text-gray-700 mb-1">
+                  Daily Depression Risk Test
+                </Text>
+                <Text className="text-gray-600 text-sm">
+                  Check your depression risk for today and receive personalized nudge.
+                </Text>
+              </View>
+
+              {/* Start Button */}
+              <TouchableOpacity
+                className="bg-blue-500 px-4 py-3 rounded-xl"
+                onPress={() => navigation.navigate("LogMood")}
+              >
+                <Text className="text-white font-semibold">Start</Text>
+              </TouchableOpacity>
+          </View>
+        </View>
+
 
         {/* Quick Stats */}
         <View className="mb-6">
