@@ -43,8 +43,7 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
       return;
     }
     // Navigate to main app after successful signup
-    console.log("Navigating to EmergencyContact...")
-    navigation.replace('EmergencyContact');
+    navigation.navigate('EmergencyContact');
   };
 
   return (
@@ -131,9 +130,8 @@ const SignUp: React.FC<Props> = ({ navigation }) => {
           />
         </View>
 
-        {/* Log in button */}
         <Button title="Sign Up" onPress={handleSignUp} />
-
+       {/* Log in button */}
         <View className="flex-row items-center justify-center mt-2">
           <Text className="text-gray-600">Already have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>

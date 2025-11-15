@@ -21,14 +21,14 @@ interface MoodEntry {
 const sampleMoods: MoodEntry[] = [
   {
     id: '1',
-    image: require('../assets/Happy.png'),
+    image: require('../assets/mood/happy.png'),
     label: 'Happy',
     description: 'Caught up with friends over lunch.',
     time: '2:00 PM',
   },
   {
     id: '2',
-    image: require('../assets/Energetic.png'),
+    image: require('../assets/mood/energetic.png'),
     label: 'Energetic',
     description: 'Morning workout left me feeling pumped.',
     time: '10:30 AM',

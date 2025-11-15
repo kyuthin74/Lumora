@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import {
@@ -32,6 +33,7 @@ type HomePageProps = {
 
 export function HomePage({ }: HomePageProps) {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const [affirmationIndex, setAffirmationIndex] = useState(0);
 
   const nextAffirmation = () => {
@@ -109,6 +111,7 @@ export function HomePage({ }: HomePageProps) {
           <TouchableOpacity
             className="w-full h-14 bg-[#4093d6] hover:bg-[#3682c5] flex-row items-center justify-center rounded-xl"
             activeOpacity={0.8}
+            onPress={() => navigation.navigate('LogMood')}
           >
             <Heart className="w-5 h-5 mr-2" color="#ffffff" />
             <Text className="text-white text-base font-medium">
