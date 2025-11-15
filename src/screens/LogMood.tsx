@@ -68,7 +68,7 @@ const LogMood: React.FC<Props> = ({navigation}) => {
   const [selected, setSelected] = useState<number | null>(null);
 
   return (
-    <ScrollView className="flex-1 bg-gray-50 px-6 pt-12">
+    <ScrollView className="flex-1 bg-gray-50 px-6 pt-6">
       {/* Header */}
       <Text className="text-2xl font-bold text-center mt-6 text-gray-800 mb-2">
         Log Your Mood
@@ -96,7 +96,7 @@ const LogMood: React.FC<Props> = ({navigation}) => {
             >
               <Image
                 source={mood.image}
-                className="w-20 h-20 mb-2"
+                className="w-20 h-20"
                 resizeMode="contain"
               />
 
