@@ -12,8 +12,6 @@ import {
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Button from '../components/Button';
-import EmergencyContact from './EmergencyContact';
-
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
 type SignUpScreenNavigationProp = NativeStackNavigationProp<
