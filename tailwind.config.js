@@ -10,8 +10,10 @@ module.exports = {
       colors: {
         primary: '#4093D6',
         "primary-100": '#D7F1FF',
+        "primary-200": '#94CEFC',
         accent: '#f97316',
         success: '#BDECB6',
+        paleGreen: '#D9F2D9',
         danger: '#FE0202',
         muted: '#EBEBEB',
         background: {

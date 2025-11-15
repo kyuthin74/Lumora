@@ -33,7 +33,7 @@ const Login: React.FC<Props> = ({ navigation }) => {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
-    navigation.replace("MainTabs");
+    navigation.replace("HighRiskAlert");
   };
 
   return (

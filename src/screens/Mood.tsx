@@ -9,6 +9,7 @@ import {
   ImageSourcePropType,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 interface MoodEntry {
   id: string;
@@ -21,21 +22,22 @@ interface MoodEntry {
 const sampleMoods: MoodEntry[] = [
   {
     id: '1',
-    image: require('../assets/Happy.png'),
+    image: require('../assets/mood/happy.png'),
     label: 'Happy',
-    description: 'Caught up with friends over lunch.',
+    description: 'Today is best day ever!',
     time: '2:00 PM',
   },
   {
     id: '2',
-    image: require('../assets/Energetic.png'),
+    image: require('../assets/mood/energetic.png'),
     label: 'Energetic',
-    description: 'Morning workout left me feeling pumped.',
+    description: 'Today is best day ever!',
     time: '10:30 AM',
   },
 ];
 
 const weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as const;
+const activityIcons = ['bed', 'cafe', 'book', 'heart'] as const;
 
 const toISODate = (date: Date) => date.toISOString().split('T')[0];
 
@@ -108,10 +110,12 @@ const Mood: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         <View className="px-6 pt-12">
-          <Text className="text-2xl font-bold text-gray-900">Mood Diary</Text>
-          <Text className="mt-1 text-base text-gray-600">
-            Log your daily mood here!
-          </Text>
+         <View className="pt-4">
+          <Text className="text-center text-2xl font-bold text-gray-900">Mood Diary</Text>
+                   <Text className="mt-1 text-center text-base text-gray-600">
+                     Log your daily mood here!
+                   </Text>
+         </View>
 
           <View className="mt-6 rounded-3xl bg-primary px-5 py-6 shadow-md">
             <View className="mb-4 flex-row items-center justify-between">
@@ -174,29 +178,32 @@ const Mood: React.FC = () => {
             {sampleMoods.map((entry) => (
               <View
                 key={entry.id}
-                className="rounded-3xl bg-white px-4 py-4 shadow-sm border-primary-100 border mb-1"
+                className="mb-1 rounded-xl border border-primary-200 bg-primary-100 px-4 py-4 shadow-sm"
               >
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-center gap-3">
-                    <View className="h-12 w-12 items-center justify-center rounded-full bg-primary-100">
-                      <Image
-                        source={entry.image}
-                        className="h-[45px] w-[45px]"
-                        resizeMode="contain"
-                      />
+                <View className="flex-row items-center ">
+                  <View className="items-center" style={styles.avatarColumn}>
+                    <View style={styles.avatarWrapper}>
+                      <Image source={entry.image} style={styles.avatarImage} resizeMode="contain" />
                     </View>
-                    <View>
-                      <Text className="text-base font-semibold text-gray-900">
-                        {entry.label}
-                      </Text>
-                      <Text className="text-sm text-gray-600">
-                        {entry.description}
-                      </Text>
-                    </View>
+                    <Text className="mt-2 text-sm font-semibold text-gray-800">{entry.label}</Text>
                   </View>
-                  <Text className="text-sm font-medium text-gray-500">
-                    {entry.time}
-                  </Text>
+
+                  <View className="ml-4 flex-1">
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center gap-2">
+                        {activityIcons.map((icon) => (
+                          <View key={icon} style={styles.activityBadge}>
+                            <Ionicons name={icon} size={18} color="#111827" />
+                          </View>
+                        ))}
+                      </View>
+                     
+                    </View>
+                    <Text className="mt-3 text-sm text-gray-700">{entry.description}</Text>
+                  </View>
+                  <View>
+                     <Text className="text-sm font-semibold text-gray-600">{entry.time}</Text>
+                  </View>
                 </View>
               </View>
             ))}
@@ -227,6 +234,39 @@ const styles = StyleSheet.create({
   },
   dayTextOutside: {
     color: '#BFDBFE',
+  },
+  avatarColumn: {
+    width: 64,
+  },
+  avatarWrapper: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  avatarImage: {
+    width: 36,
+    height: 36,
+  },
+  activityBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+    elevation: 1,
   },
 });
 
