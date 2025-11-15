@@ -54,47 +54,55 @@ const SplashFeatures: React.FC<Props> = ({ navigation }) => {
         contentContainerClassName="flex-grow px-6 py-12"
         showsVerticalScrollIndicator={false}
       >
-        <View className="mb-4 mt-4 ml-10">
-          {featureItems.map(({ id, title, imageSrc }) => (
-            <View
-              key={id}
-              className="flex-row items-center gap-3 rounded-xl bg-background px-4 py-3"
-            >
+        <View className="flex-1 justify-between">
+          <View className="mb-3 ml-10 mt-3">
+            {featureItems.map(({ id, title, imageSrc }) => (
+              <View
+                key={id}
+                className="flex-row items-center gap-1 rounded-xl bg-background px-4 py-3"
+              >
+                <Image
+                  source={imageSrc}
+                  className="h-[45px] w-[45px] rounded-md border border-primary-100 bg-background shadow-md"
+                  resizeMode="contain"
+                />
+                <Text className="mx-3 text-lg font-medium text-primary">
+                  {title}{' '}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <View className="mt-2 items-center">
+            <Button
+              title="Get Started"
+              onPress={() => navigation.replace('Login')}
+            />
+          </View>
+
+          <View className="flex-row mt-12 items-center">
+            <View className="relative h-[300px] w-[140px]">
               <Image
-                source={imageSrc}
-                className="h-[45px] w-[45px] rounded-md border border-primary-100 bg-background shadow-md"
-                resizeMode="contain"
+                source={require('../assets/AnalysisPage.png')}
+                className="absolute -left-4 top-8 h-full w-full -rotate-[25deg] rounded-3xl border border-white/60 bg-white shadow-md"
+                resizeMode="cover"
               />
-              <Text className="mx-3 text-lg font-medium text-primary">
-                {title}{' '}
-              </Text>
             </View>
-          ))}
-        </View>
-
-        <View className="mt-2 items-center">
-          <Button
-            title="Get Started"
-            onPress={() => navigation.replace('Login')}
-          />
-        </View>
-
-        <View className="mt-10 flex-row items-center gap-2">
-          <Image
-            source={require('../assets/MoodPage.png')}
-            className="h-[200px] w-[200px] rounded-2xl"
-            resizeMode="contain"
-          />
-          <Image
-            source={require('../assets/HomePage.png')}
-            className="h-[200px] w-[200px] rounded-2xl"
-            resizeMode="contain"
-          />
-          <Image
-            source={require('../assets/AnalysisPage.png')}
-            className="h-[200px] w-[200px] rounded-2xl"
-            resizeMode="contain"
-          />
+            <View className="relative h-[300px] w-[140px]">
+              <Image
+                source={require('../assets/HomePage.png')}
+                className="absolute -left-4 top-4 h-full w-full -rotate-[17deg] rounded-3xl border border-white/70 bg-white shadow-md"
+                resizeMode="cover"
+              />
+            </View>
+            <View className="relative h-[300px] w-[140px]">
+              <Image
+                source={require('../assets/MoodPage.png')}
+                className="absolute -left-3 top-1 z-10 h-full w-full -rotate-[8deg] rounded-3xl border border-white bg-white shadow-lg"
+                resizeMode="cover"
+              />
+            </View>
+          </View>
         </View>
       </ScrollView>
     </View>

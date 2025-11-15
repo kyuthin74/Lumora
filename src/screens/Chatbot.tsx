@@ -48,7 +48,7 @@ const Chatbot: React.FC = () => {
     >
       <View className="flex-1">
         {/* Header */}
-        <View className="bg-purple-600 px-6 pt-12 pb-4">
+        <View className="bg-primary px-6 pt-[50px] pb-4">
           <Text className="text-white text-2xl font-bold mb-1">
             AI Assistant
           </Text>
@@ -72,7 +72,7 @@ const Chatbot: React.FC = () => {
               <View
                 className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                   message.isUser
-                    ? 'bg-purple-600 rounded-tr-sm'
+                    ? 'bg-primary rounded-tr-sm'
                     : 'bg-white rounded-tl-sm border border-gray-200'
                 }`}
               >
@@ -100,7 +100,7 @@ const Chatbot: React.FC = () => {
               multiline
             />
             <TouchableOpacity
-              className="bg-purple-600 w-12 h-12 rounded-full items-center justify-center"
+              className="bg-primary w-12 h-12 rounded-full items-center justify-center"
               onPress={handleSend}
             >
               <Text className="text-white text-xl">➤</Text>

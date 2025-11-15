@@ -15,7 +15,7 @@ const BottomTabNavigator: React.FC = () => {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#9333EA',
+        tabBarActiveTintColor: '#4093D6',
         tabBarInactiveTintColor: '#9CA3AF',
         tabBarStyle: {
           paddingBottom: 5,
@@ -36,7 +36,7 @@ const BottomTabNavigator: React.FC = () => {
         component={Mood}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="smile-o" color={color} size={size ?? 24} />
+            <Icon name="heart" color={color} size={size ?? 24} />
           ),
         }}
       />
