@@ -42,6 +42,7 @@ const SignUp = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const [agree, setAgree] = useState(false);
   const [errors, setErrors] = useState<SignUpErrors>({
     username: "",
@@ -74,6 +75,11 @@ const SignUp = () => {
     };
   };
 
+  const isValidEmail = (value: string) => {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailPattern.test(value);
+  };
+
   // --------------------------------------------------------------
   // ✅ Added: Validation + Submit function
   // --------------------------------------------------------------
@@ -84,7 +90,11 @@ const SignUp = () => {
 
     const newErrors: SignUpErrors = {
       username: trimmedUsername ? "" : "Username is required",
-      email: trimmedEmail ? "" : "Email is required",
+      email: !trimmedEmail
+        ? "Email is required"
+        : isValidEmail(trimmedEmail)
+          ? ""
+          : "Please enter a valid email",
       password: trimmedPassword ? "" : "Password is required",
       agree: agree ? "" : "You must agree to the terms",
     };
@@ -154,12 +164,14 @@ const SignUp = () => {
       <Input
         icon="lock"
         placeholder="Password"
-        secureTextEntry
+        secureTextEntry={!passwordVisible}
         value={password}
         onChangeText={(text) => {
           setPassword(text);
           if (errors.password) clearError("password");
         }}
+        rightIcon={passwordVisible ? "eye" : "eye-slash"}
+        onRightIconPress={() => setPasswordVisible((prev) => !prev)}
       />
       {errors.password ? (
         <Text className="text-red-500 ml-2 -mt-3 mb-2">{errors.password}</Text>

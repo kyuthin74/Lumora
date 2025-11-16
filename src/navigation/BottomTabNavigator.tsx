@@ -1,5 +1,4 @@
 import React from 'react';
-import { Text } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Home from '../screens/Home';
@@ -8,7 +7,15 @@ import Analysis from '../screens/Analysis';
 import Chatbot from '../screens/Chatbot';
 import Profile from '../screens/Profile';
 
-const Tab = createBottomTabNavigator();
+export type BottomTabParamList = {
+  Home: undefined;
+  Mood: undefined;
+  Analysis: undefined;
+  Chatbot: undefined;
+  Profile: undefined;
+};
+
+const Tab = createBottomTabNavigator<BottomTabParamList>();
 
 const BottomTabNavigator: React.FC = () => {
   return (
