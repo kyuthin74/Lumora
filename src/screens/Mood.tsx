@@ -10,6 +10,11 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { RootStackParamList } from '../navigation/AppNavigator';
+import { BottomTabParamList } from '../navigation/BottomTabNavigator';
 
 interface MoodEntry {
   id: string;
@@ -41,7 +46,13 @@ const activityIcons = ['bed', 'cafe', 'book', 'heart'] as const;
 
 const toISODate = (date: Date) => date.toISOString().split('T')[0];
 
+type MoodScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<BottomTabParamList, 'Mood'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
+
 const Mood: React.FC = () => {
+  const navigation = useNavigation<MoodScreenNavigationProp>();
   const [currentMonth, setCurrentMonth] = useState<Date>(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
@@ -213,7 +224,7 @@ const Mood: React.FC = () => {
 
       <TouchableOpacity
         className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg"
-        onPress={() => {/* Placeholder for navigation to mood logging flow */}}
+        onPress={() => navigation.navigate('MoodJournal')}
         activeOpacity={0.8}
       >
         <Icon name="plus" color="#FFFFFF" size={26} />

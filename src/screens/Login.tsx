@@ -16,6 +16,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({ email: "", password: "" });
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const handleLogin = () => {
     const nextErrors = { email: "", password: "" };
@@ -68,7 +69,7 @@ const Login = () => {
       <Input
         icon="lock"
         placeholder="Password"
-        secureTextEntry
+        secureTextEntry={!passwordVisible}
         value={password}
         onChangeText={(text) => {
           setPassword(text);
@@ -76,6 +77,8 @@ const Login = () => {
             setErrors((prev) => ({ ...prev, password: "" }));
           }
         }}
+        rightIcon={passwordVisible ? "eye" : "eye-slash"}
+        onRightIconPress={() => setPasswordVisible((prev) => !prev)}
       />
       {errors.password ? (
         <Text className="text-red-500 mb-4">{errors.password}</Text>
