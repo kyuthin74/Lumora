@@ -7,33 +7,31 @@ import {
   Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
 import {
   ChevronLeft,
   ChevronRight,
-  Heart,
   Sparkles,
   Brain,
-  Bell
+  Bell,
+  Star
 } from "lucide-react-native";
+import type { RootStackParamList } from '../navigation/AppNavigator';
+import Button from '../components/Button';
 
 const affirmations = [
   "You are capable of amazing things. Every step forward is progress, no matter how small.",
-  "Your feelings are valid. It's okay to not be okay sometimes.",
-  "Today is a new opportunity to grow and learn. Embrace it with an open heart.",
-  "You are stronger than you think. You've overcome challenges before, and you will again.",
-  "Be kind to yourself today. You deserve the same compassion you give to others.",
-  "Your mental health matters. Taking time for yourself is not selfish, it's necessary.",
+  "You deserve care every day. With rest, movement, nourishment, and compassion, you lay the ground where confidence grows.",
+  "Celebrate your small wins. Every healthy choice, boundary you protect, and moment you choose gentleness over criticism.",
+  "When you listen with kindness, you make space for healing, learning, and the next small, caring step forward.",
+  "You’re allowed to move at your own pace. Every breath, sip of water, and tiny action you take is a quiet vote for your well-being.",
 ];
 
-type HomePageProps = {
-  onNavigate: (page: string) => void;
-};
-
-export function HomePage({ }: HomePageProps) {
+const Home: React.FC = () => {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [affirmationIndex, setAffirmationIndex] = useState(0);
 
   const nextAffirmation = () => {
@@ -42,6 +40,10 @@ export function HomePage({ }: HomePageProps) {
 
   const prevAffirmation = () => {
     setAffirmationIndex((prev) => (prev - 1 + affirmations.length) % affirmations.length);
+  };
+
+  const handleStartCheckIn = () => {
+    navigation.navigate('TestForm');
   };
 
   return (
@@ -62,12 +64,12 @@ export function HomePage({ }: HomePageProps) {
           <Card className="bg-primary text-white p-6 border-0">
             <View className="flex-row items-start gap-2 mb-3">
               <Sparkles className="w-5 h-5 mt-1" color="#ffffff" />
-              <Text className="text-white text-base font-semibold">
+              <Text className="text-white text-lg font-semibold">
                 Daily Affirmation
               </Text>
             </View>
 
-            <Text className="text-white/95 mb-4 min-h-[80px]">
+            <Text className="text-white/95 text-lg mb-2 min-h-[80px]">
               {affirmations[affirmationIndex]}
             </Text>
 
@@ -77,11 +79,10 @@ export function HomePage({ }: HomePageProps) {
                 {affirmations.map((_, idx) => (
                   <View
                     key={idx}
-                    className={`h-1.5 rounded-full transition-all ${
-                      idx === affirmationIndex
-                        ? "bg-white w-6"
-                        : "bg-white/40 w-1.5"
-                    }`}
+                    className={`h-1.5 rounded-full transition-all ${idx === affirmationIndex
+                      ? "bg-white w-6"
+                      : "bg-white/40 w-1.5"
+                      }`}
                   />
                 ))}
               </View>
@@ -108,72 +109,65 @@ export function HomePage({ }: HomePageProps) {
           </Card>
 
           {/* Daily Check-in Button */}
-          <TouchableOpacity
-            className="w-full h-14 bg-[#4093d6] hover:bg-[#3682c5] flex-row items-center justify-center rounded-xl"
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate('LogMood')}
-          >
-            <Heart className="w-5 h-5 mr-2" color="#ffffff" />
-            <Text className="text-white text-base font-medium">
-              Daily Mood Check-In
-            </Text>
-          </TouchableOpacity>
+          <View className="flex-row items-center justify-between rounded-2xl border border-gray-200 bg-white p-5">
+            <View className="flex-1 pr-4">
+              <Text className="text-lg font-semibold text-gray-900">
+                Daily Depression Check-In
+              </Text>
+              <Text className="mt-1 text-sm text-gray-600">
+                Check your risk level today and receive a personalized nudge.
+              </Text>
+            </View>
+            <Button
+              title="Start"
+              onPress={handleStartCheckIn}
+              variant="short"
+            />
+          </View>
+
 
           {/* Today's Science-Based Nudges */}
-          <Card className="p-5">
-            <View className="flex-row items-start gap-2 mb-3">
+          <Card className="p-5 bg-primary-100 border border-primary">
+            <View className="flex-row items-start gap-2 mb-2">
               <Brain className="w-5 h-5 mt-0.5" color="#4093d6" />
-              <Text className="text-[#0c141b] text-base font-semibold">
-                Today's Science-Based Nudges
+              <Text className="text-[#0c141b] text-lg font-semibold">
+                AI Insights
               </Text>
             </View>
 
-            <View className="space-y-3">
-              <View className="flex-row gap-3">
-                <View className="w-2 h-2 rounded-full bg-[#4093d6] mt-2" />
-                <Text className="text-[#5a6b7a] flex-1">
-                  Take a 5-minute break every hour to reduce stress and improve focus.
-                </Text>
+            <View className="flex gap-4 px-2">
+              <View>
+                <Text className="text-gray-800 text-lg">
+                  Based on your recent entries, you will likely be at depression risk 70%. We suggest you to take an appointment with a mental health doctor.                </Text>
               </View>
-
-              <View className="flex-row gap-3">
-                <View className="w-2 h-2 rounded-full bg-[#4093d6] mt-2" />
-                <Text className="text-[#5a6b7a] flex-1">
-                  Practice deep breathing: Inhale for 4 counts, hold for 4, exhale for 4.
+              <View className="flex-row gap-3 items-center">
+                <Text className="text-md ">Depression Risk
                 </Text>
-              </View>
-
-              <View className="flex-row gap-3">
-                <View className="w-2 h-2 rounded-full bg-[#4093d6] mt-2" />
-                <Text className="text-[#5a6b7a] flex-1">
-                  Spend 10 minutes outdoors to boost mood and vitamin D levels.
-                </Text>
+                <View className="bg-danger px-4 py-1 rounded-xl">
+                  <Text className="text-white font-semibold text-md"> High </Text>
+                </View>
               </View>
             </View>
           </Card>
 
           {/* AI Insights */}
-          <Card className="p-5 bg-gradient-to-br from-[#8dc4f1]/20 to-[#47a9f6]/20 border border-[#4093d6]/30">
-            <View className="flex-row items-start gap-2 mb-3">
-              <Sparkles className="w-5 h-5 mt-0.5" color="#4093d6" />
-              <Text className="text-[#0c141b] text-base font-semibold">
-                AI Insights
+          <Card className="p-5 bg-paleGreen border border-green-300">
+            <View className="flex-row items-start gap-2 mb-2">
+              <Star className="w-5 h-5 mt-0.5" color="#D7BB0A" fill="#D7BB0A"/>
+              <Text className="text-[#0c141b] text-lg font-semibold">
+                Today's Nudge
               </Text>
             </View>
 
-            <Text className="text-[#0c141b] mb-3">
-              Based on your recent entries, you tend to feel more energized in the mornings.
-              Consider scheduling important tasks before noon for optimal productivity.
+            <Text className="text-gray-800 text-lg mb-3">
+              Try a 5-minutes breathing exercise. Research shows it can reduce anxiety up to 25% and improve focus.
             </Text>
 
-            <Text className="text-[#5a6b7a]">
-              You've logged 5 consecutive days this week! Keep up the great work. 🎉
-            </Text>
           </Card>
         </View>
       </ScrollView>
     </View>
   );
-}
+};
 
-export default HomePage;
+export default Home;

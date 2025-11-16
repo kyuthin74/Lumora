@@ -8,6 +8,7 @@ import SplashIntro from '../screens/SplashIntro';
 import SplashFeatures from '../screens/SplashFeatures';
 import LogMood from '../screens/LogMood';
 import TestForm from '../screens/TestForm';
+import HighRiskAlert from '../screens/HighRiskAlert';
 
 export type RootStackParamList = {
   SplashIntro: undefined;
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   EmergencyContact: undefined;
   LogMood: undefined;
   TestForm: undefined;
+  HighRiskAlert: undefined;
   MainTabs: undefined;
 };
 
@@ -37,6 +39,7 @@ const AppNavigator: React.FC = () => {
       <Stack.Screen name="EmergencyContact" component={EmergencyContact} />
       <Stack.Screen name="LogMood" component={LogMood} />
       <Stack.Screen name="TestForm" component={TestForm} />
+      <Stack.Screen name="HighRiskAlert" component={HighRiskAlert} />
       <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
     </Stack.Navigator>
   );

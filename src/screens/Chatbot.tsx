@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
-
+import {
+  View,
+  Text,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SendHorizonalIcon } from 'lucide-react-native';
 interface Message {
   id: string;
   text: string;
@@ -8,6 +17,8 @@ interface Message {
 }
 
 const Chatbot: React.FC = () => {
+  const insets = useSafeAreaInsets();
+  const [hasStarted, setHasStarted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -40,20 +51,44 @@ const Chatbot: React.FC = () => {
     }, 1000);
   };
 
+  if (!hasStarted) {
+    return (
+      <View
+        className="flex-1 items-center justify-center bg-[#f3f6fb] px-8"
+        style={{ paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }}
+      >
+        <Text className="text-center text-lg font-semibold text-gray-900">
+          "Hey, I'm here for you. 💙"
+        </Text>
+        <Text className="mt-3 text-center text-base text-gray-600">
+          Tell me how you're feeling today, and I'll check in,
+          share little tips, and help you feel a bit lighter.
+        </Text>
+        <TouchableOpacity
+          className="mt-10 w-full rounded-xl bg-primary py-4"
+          activeOpacity={0.8}
+          onPress={() => setHasStarted(true)}
+        >
+          <Text className="text-center text-base font-semibold text-white">Let’s Start!</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-gray-50"
+      className="flex-1 bg-background"
       keyboardVerticalOffset={90}
     >
       <View className="flex-1">
         {/* Header */}
-        <View className="bg-primary px-6 pt-[50px] pb-4">
+        <View className="flex items-center bg-primary px-6 pt-[50px] pb-4 ">
           <Text className="text-white text-2xl font-bold mb-1">
-            AI Assistant
+            LUMORA
           </Text>
-          <Text className="text-white/80 text-sm">
-            Your 24/7 mental health companion
+          <Text className="text-white/80 text-md">
+            Your mental wellness companion
           </Text>
         </View>
 
@@ -73,7 +108,7 @@ const Chatbot: React.FC = () => {
                 className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                   message.isUser
                     ? 'bg-primary rounded-tr-sm'
-                    : 'bg-white rounded-tl-sm border border-gray-200'
+                    : 'bg-gray-100 rounded-tl-sm border border-gray-300'
                 }`}
               >
                 <Text
@@ -100,10 +135,10 @@ const Chatbot: React.FC = () => {
               multiline
             />
             <TouchableOpacity
-              className="bg-primary w-12 h-12 rounded-full items-center justify-center"
+              className="w-12 h-12 rounded-full items-center justify-center"
               onPress={handleSend}
             >
-              <Text className="text-white text-xl">➤</Text>
+              <SendHorizonalIcon color="#4093D6" fill="#4093D6" size={28} />
             </TouchableOpacity>
           </View>
         </View>
