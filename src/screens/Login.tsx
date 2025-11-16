@@ -1,112 +1,101 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-  Image,
-} from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/AppNavigator';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import Button from '../components/Button';
+import React, { useState } from "react";
+import { View, Text, Image, TouchableOpacity } from "react-native";
+import Input from "../components/Input";
+import Button from "../components/Button";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../navigation/AppNavigator";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  'Login'
+  "Login"
 >;
 
-interface Props {
-  navigation: LoginScreenNavigationProp;
-}
-
-const Login: React.FC<Props> = ({ navigation }) => {
+const Login = () => {
+  const navigation = useNavigation<LoginScreenNavigationProp>();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({ email: "", password: "" });
 
   const handleLogin = () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+    const nextErrors = { email: "", password: "" };
+
+    if (!email.trim()) {
+      nextErrors.email = "Email or username is required.";
+    }
+    if (!password.trim()) {
+      nextErrors.password = "Password is required.";
+    }
+
+    setErrors(nextErrors);
+
+    if (nextErrors.email || nextErrors.password) {
       return;
     }
-    navigation.replace("MainTabs");
+
+    navigation.navigate("EmergencyContact");
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-white"
-    >
-      <ScrollView
-        contentContainerClassName="flex-grow justify-center items-center px-8"
-        keyboardShouldPersistTaps="handled"
-      >
-        <View className="w-full max-w-[350px]">
-          {/* Logo */}
-          <View className="items-center mb-8 justify-center">
-            <Image
-              source={require("../assets/Lumora.png")}
-              className="w-35 h-35 mb-4"
-              resizeMode="contain"
-            />
-                </View>
+    <View className="flex-1 bg-background px-6 justify-center">
+      <View className="items-center mb-12">
+        <Image
+          source={require("../assets/Lumora.png")}
+          className="h-[180px] w-[180px] mb-10"
+          resizeMode="contain"
+        />
+      </View>
 
-          {/* Welcome text */}
-          <View className="mb-8">
-            <Text className="text-2xl font-semibold text-gray-800 mb-1 text-center">
-             Your mental health companion
-            </Text>
-          </View>
+      <Text className="text-2xl font-bold text-gray-900 mb-4">Welcome back</Text>
 
-          {/* Email input */}
-          <View className="mb-4 flex-row items-center border border-gray-300 rounded-md px-3 bg-white">
-            <Ionicons name="mail-outline" size={18} color="#9CA3AF" />
-            <TextInput
-              className="flex-1 px-2 py-3 text-gray-800"
-              placeholder="Email / Username"
-              placeholderTextColor="#9CA3AF"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-          </View>
+      {/* Email input */}
+      <Input
+        icon="envelope"
+        placeholder="Email / Username"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        value={email}
+        onChangeText={(text) => {
+          setEmail(text);
+          if (errors.email) {
+            setErrors((prev) => ({ ...prev, email: "" }));
+          }
+        }}
+      />
+      {errors.email ? <Text className="text-red-500 mb-2">{errors.email}</Text> : <View className="mb-2" />}
 
-          {/* Password input */}
-          <View className="mb-4 flex-row items-center border border-gray-300 rounded-md px-3 bg-white">
-            <Ionicons name="lock-closed-outline" size={18} color="#9CA3AF" />
-            <TextInput
-              className="flex-1 px-2 py-3 text-gray-800"
-              placeholder="Password"
-              placeholderTextColor="#9CA3AF"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-          </View>
+      {/* Password */}
+      <Input
+        icon="lock"
+        placeholder="Password"
+        secureTextEntry
+        value={password}
+        onChangeText={(text) => {
+          setPassword(text);
+          if (errors.password) {
+            setErrors((prev) => ({ ...prev, password: "" }));
+          }
+        }}
+      />
+      {errors.password ? (
+        <Text className="text-red-500 mb-4">{errors.password}</Text>
+      ) : (
+        <View className="mb-4" />
+      )}
 
-          {/* Forgot password */}
-          <TouchableOpacity className="mb-6 self-end" onPress={() => {}}>
-            <Text className="text-blue-600 text-sm">Forgot password?</Text>
-          </TouchableOpacity>
+      <TouchableOpacity className="items-end mb-6 mt-2">
+        <Text className="text-primary font-arimo">Forgot password?</Text>
+      </TouchableOpacity>
 
-          {/* Log in button */}
-          <Button title="Log in" onPress={handleLogin} />
+      <Button title="Log in" onPress={handleLogin} />
 
-          {/* Signup link */}
-          <View className="flex-row justify-center items-center mt-6">
-            <Text className="text-gray-600">Don’t have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
-              <Text className="text-blue-600 font-semibold">Sign up</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <View className="flex-row justify-center mt-12">
+        <Text className="text-lg text-gray-700 ">Don’t have an account? </Text>
+        <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+          <Text className="text-lg text-primary font-semibold">Sign up</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 

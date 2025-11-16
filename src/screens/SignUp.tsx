@@ -1,147 +1,198 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-  Image,
-} from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Button from '../components/Button';
-import type { RootStackParamList } from '../navigation/AppNavigator';
+import React, { useCallback, useState } from "react";
+import { View, Text, Image, TouchableOpacity, GestureResponderEvent } from "react-native";
+import Input from "../components/Input";
+import Button from "../components/Button";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../navigation/AppNavigator";
+import Icon from "react-native-vector-icons/Feather";
 
 type SignUpScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  'SignUp'
+  "SignUp"
 >;
 
-interface Props {
-  navigation: SignUpScreenNavigationProp;
-}
+const Checkbox = ({ checked, onToggle }: { checked: boolean; onToggle: () => void }) => (
+  <TouchableOpacity
+    accessibilityRole="checkbox"
+    accessibilityState={{ checked }}
+    onPress={(event: GestureResponderEvent) => {
+      event.stopPropagation();
+      onToggle();
+    }}
+    className={`w-5 h-5 mr-2 rounded-sm border-2 border-primary items-center justify-center ${
+      checked ? "bg-primary" : "bg-white"
+    }`}
+    activeOpacity={0.8}
+  >
+    {checked && <Icon name="check" size={16} color="#FFFFFF" />}
+  </TouchableOpacity>
+);
 
-const SignUp: React.FC<Props> = ({ navigation }) => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+type SignUpErrors = {
+  username: string;
+  email: string;
+  password: string;
+  agree: string;
+};
 
-  const handleSignUp = () => {
-    if (!name || !email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
+const SignUp = () => {
+  const navigation = useNavigation<SignUpScreenNavigationProp>();
+
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [agree, setAgree] = useState(false);
+  const [errors, setErrors] = useState<SignUpErrors>({
+    username: "",
+    email: "",
+    password: "",
+    agree: "",
+  });
+
+  const clearError = useCallback((field: keyof SignUpErrors) => {
+    setErrors((prev) => (prev[field] ? { ...prev, [field]: "" } : prev));
+  }, []);
+
+  const toggleAgree = () => {
+    setAgree((prev) => {
+      const next = !prev;
+      if (next) {
+        clearError("agree");
+      }
+      return next;
+    });
+  };
+
+  // --------------------------------------------------------------
+  // ✅ Added: REST API Template
+  // --------------------------------------------------------------
+  const registerUser = async () => {
+    return {
+      success: true,
+      message: "Account created successfully",
+    };
+  };
+
+  // --------------------------------------------------------------
+  // ✅ Added: Validation + Submit function
+  // --------------------------------------------------------------
+  const handleSignUp = async () => {
+    const trimmedUsername = username.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    const newErrors: SignUpErrors = {
+      username: trimmedUsername ? "" : "Username is required",
+      email: trimmedEmail ? "" : "Email is required",
+      password: trimmedPassword ? "" : "Password is required",
+      agree: agree ? "" : "You must agree to the terms",
+    };
+
+    setErrors(newErrors);
+
+    // stop if any field invalid
+    if (Object.values(newErrors).some((msg) => msg !== "")) return;
+
+    // Call backend API (template)
+    const res = await registerUser();
+
+    if (res.success) {
+      navigation.navigate("EmergencyContact");
     }
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
-      return;
-    }
-    // Navigate to main app after successful signup
-    navigation.navigate('EmergencyContact');
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-purple-50"
-    >
-      <ScrollView
-        contentContainerClassName="flex-grow justify-center px-6 py-12"
-        keyboardShouldPersistTaps="handled"
+    <View className="flex-1 bg-background px-6 justify-center">
+      <View className="items-center mb-10">
+        <Image
+          source={require("../assets/Lumora.png")}
+          className="h-[180px] w-[180px] mb-10"
+          resizeMode="contain"
+        />
+      </View>
+
+      <Text className="text-2xl font-bold text-gray-900 mb-4">Create account</Text>
+
+      {/* --------------------------------------------------------------
+          Username Input + Error
+      -------------------------------------------------------------- */}
+      <Input
+        icon="user"
+        placeholder="Username"
+        value={username}
+        onChangeText={(text) => {
+          setUsername(text);
+          if (errors.username) clearError("username");
+        }}
+      />
+      {errors.username ? (
+        <Text className="text-red-500 ml-2 -mt-3 mb-2">{errors.username}</Text>
+      ) : null}
+
+      {/* --------------------------------------------------------------
+          Email Input + Error
+      -------------------------------------------------------------- */}
+      <Input
+        icon="envelope"
+        placeholder="Email"
+        value={email}
+        onChangeText={(text) => {
+          setEmail(text);
+          if (errors.email) clearError("email");
+        }}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
+      {errors.email ? (
+        <Text className="text-red-500 ml-2 -mt-3 mb-2">{errors.email}</Text>
+      ) : null}
+
+      {/* --------------------------------------------------------------
+          Password Input + Error
+      -------------------------------------------------------------- */}
+      <Input
+        icon="lock"
+        placeholder="Password"
+        secureTextEntry
+        value={password}
+        onChangeText={(text) => {
+          setPassword(text);
+          if (errors.password) clearError("password");
+        }}
+      />
+      {errors.password ? (
+        <Text className="text-red-500 ml-2 -mt-3 mb-2">{errors.password}</Text>
+      ) : null}
+
+      {/* --------------------------------------------------------------
+          Terms & Conditions + Error
+      -------------------------------------------------------------- */}
+      <TouchableOpacity
+        className="flex-row items-center mb-2"
+        onPress={toggleAgree}
+        activeOpacity={0.8}
       >
-        <View className="w-full max-w-[350px] mx-auto">
-          {/* Logo */}
-          <View className="mb-8 items-center justify-center">
-            <Image
-              source={require('../assets/Lumora.png')}
-              className="w-35 h-35 mb-4"
-              resizeMode="contain"
-            />
-          <Text className="text-lg text-gray-600">
-            Start Your Wellness Journey
-          </Text>
-        </View>
+        <Checkbox checked={agree} onToggle={toggleAgree} />
+        <Text className="ml-1 text-primary">I agree Terms & Conditions</Text>
+      </TouchableOpacity>
 
-        <View className="mb-6">
-          <Text className="mb-2 text-2xl font-bold text-gray-800">
-            Create Account
-          </Text>
-        </View>
+      {errors.agree ? (
+        <Text className="text-red-500 ml-2 mb-4">{errors.agree}</Text>
+      ) : null}
 
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-semibold text-gray-700">
-            Full Name
-          </Text>
-          <TextInput
-            className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-base"
-            placeholder="Enter your full name"
-            placeholderTextColor="#9CA3AF"
-            value={name}
-            onChangeText={setName}
-          />
-        </View>
+      {/* --------------------------------------------------------------
+          Submit Button
+      -------------------------------------------------------------- */}
+      <Button title="Sign up" onPress={handleSignUp} />
 
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-semibold text-gray-700">
-            Email
-          </Text>
-          <TextInput
-            className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-base"
-            placeholder="Enter your email"
-            placeholderTextColor="#9CA3AF"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
-
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-semibold text-gray-700">
-            Password
-          </Text>
-          <TextInput
-            className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-base"
-            placeholder="Create a password"
-            placeholderTextColor="#9CA3AF"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-        </View>
-
-        <View className="mb-6">
-          <Text className="mb-2 text-sm font-semibold text-gray-700">
-            Confirm Password
-          </Text>
-          <TextInput
-            className="rounded-xl border border-gray-200 bg-white px-4 py-4 text-base"
-            placeholder="Confirm your password"
-            placeholderTextColor="#9CA3AF"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-          />
-        </View>
-
-        <Button title="Sign Up" onPress={handleSignUp} />
-       {/* Log in button */}
-        <View className="flex-row items-center justify-center mt-2">
-          <Text className="text-gray-600">Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text className="font-semibold text-blue-600">Sign In</Text>
-          </TouchableOpacity>
-        </View>
-        </View>
-      
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <View className="flex-row justify-center mt-12">
+        <Text className="text-lg text-gray-700">Already have an account? </Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+          <Text className="text-lg text-primary font-semibold">Log in</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
 
