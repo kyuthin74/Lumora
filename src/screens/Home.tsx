@@ -43,7 +43,7 @@ const Home: React.FC = () => {
   };
 
   const handleStartCheckIn = () => {
-    navigation.navigate('TestForm');
+    navigation.navigate('LogMood');
   };
 
   return (

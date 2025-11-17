@@ -3,15 +3,8 @@ import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import Button from "../components/Button";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
-
-type SignUpScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'SignUp'
->;
-
-interface Props {
-  navigation: SignUpScreenNavigationProp;
-}
+import { ArrowLeft} from "lucide-react-native";
+import { useNavigation } from "@react-navigation/native";
 
 const moods = [
   {
@@ -64,13 +57,26 @@ const moods = [
   },
 ];
 
-const LogMood: React.FC<Props> = ({navigation}) => {
+const LogMood: React.FC = () => {
   const [selected, setSelected] = useState<number | null>(null);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+      const handleBack = () => {
+          navigation.navigate('Home');
+      }
 
   return (
     <ScrollView className="flex-1 bg-gray-50 px-6 pt-6">
+      {/* Back Button */}
+      <TouchableOpacity
+        onPress={handleBack}
+        className="flex-row items-center mt-6 mb-2"
+      >
+        <ArrowLeft size={24} color="#4B5563" />
+        <Text className="text-gray-700 text-lg ml-2">Back</Text>
+      </TouchableOpacity>
+
       {/* Header */}
-      <Text className="text-2xl font-bold text-center mt-6 text-gray-800 mb-2">
+      <Text className="text-2xl font-bold text-center text-gray-800 mb-2">
         Log Your Mood
       </Text>
       <Text className="text-gray-600 text-center mb-6">
@@ -78,7 +84,7 @@ const LogMood: React.FC<Props> = ({navigation}) => {
       </Text>
 
       {/* Mood Grid */}
-      <View className="flex-row flex-wrap justify-between">
+      <View className="flex-row flex-wrap px-8 mb-6 justify-between">
         {moods.map((mood) => {
           const isActive = selected === mood.id;
 
@@ -87,7 +93,7 @@ const LogMood: React.FC<Props> = ({navigation}) => {
               key={mood.id}
               onPress={() => setSelected(mood.id)}
               className={`
-                w-[37%] bg-white rounded-2xl p-5 mb-4 items-center shadow-md
+                w-[42%] h-[25%] bg-white rounded-2xl mb-4 items-center shadow-md
               `}
               style={{
                 borderWidth: isActive ? 2 : 0,
@@ -101,7 +107,7 @@ const LogMood: React.FC<Props> = ({navigation}) => {
               />
 
               <Text
-                className="text-lg font-semibold mt-1"
+                className="text-lg font-semibold"
                 style={{ color: mood.color }}
               >
                 {mood.label}
@@ -112,16 +118,13 @@ const LogMood: React.FC<Props> = ({navigation}) => {
       </View>
 
       {/* Continue Button */}
-      <View className="mt-6 items-center">
-  <Button
-    title="Continue"
-    disabled={!selected}
-    onPress={() => navigation.navigate("TestForm")}
-  />
-</View>
-
-
-      <View className="mb-10" />
+      <View className="mt-14 items-center">
+        <Button
+          title="Continue"
+          disabled={!selected}
+          onPress={() => navigation.navigate("TestForm")}
+        />
+      </View>
     </ScrollView>
   );
 };
