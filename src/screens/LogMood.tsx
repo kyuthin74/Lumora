@@ -123,6 +123,7 @@ const LogMood: React.FC = () => {
           title="Continue"
           disabled={!selected}
           onPress={() => navigation.navigate("TestForm")}
+          variant="primary"
         />
       </View>
     </ScrollView>

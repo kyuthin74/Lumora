@@ -11,28 +11,15 @@ import {
   Alert,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "../navigation/AppNavigator";
+import { useNavigation } from "@react-navigation/native";
+import Button from "../components/Button";
 
-type RootStackParamList = {
-  Login: undefined;
-  SignUp: undefined;
-  EmergencyContact: undefined;
-  MainTabs: undefined;
-};
-
-type NavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "EmergencyContact"
->;
-
-interface Props {
-  navigation: NavigationProp;
-}
-
-const EmergencyContact: React.FC<Props> = ({ navigation }) => {
+const EmergencyContact: React.FC = () => {
   const [name, setName] = useState("");
   const [relationship, setRelationship] = useState("");
   const [email, setEmail] = useState("");
-
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const handleSave = () => {
     if (!name || !relationship || !email) {
       Alert.alert("Error", "Please fill in all fields");
@@ -49,7 +36,7 @@ const EmergencyContact: React.FC<Props> = ({ navigation }) => {
     >
       <ScrollView contentContainerClassName="flex-grow px-12 pt-10 pb-16">
         <View className="flex-row justify-end mt-6 mb-6">
-          <TouchableOpacity onPress={() => navigation.replace("MainTabs")}>
+          <TouchableOpacity onPress={() => navigation.navigate("HighRiskAlert")}>
             <Text className="text-gray-600 text-xl">Skip</Text>
           </TouchableOpacity>
         </View>
@@ -93,12 +80,13 @@ const EmergencyContact: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
 
-        <TouchableOpacity
+        <Button
+          disabled={!name || !relationship || !email}
+          title="Save"
           onPress={handleSave}
-          className="mt-6 bg-primary py-2 rounded-lg items-center self-center w-32"
-        >
-          <Text className="text-white text-lg">Save</Text>
-        </TouchableOpacity>
+          variant="short"
+          className="mt-6 self-center w-36"
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );

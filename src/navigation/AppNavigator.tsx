@@ -12,6 +12,7 @@ import HighRiskAlert from '../screens/HighRiskAlert';
 import MoodJournal from '../screens/MoodJournal';
 import Home from '../screens/Home';
 import NudgeScreen from '../screens/Nudge';
+import AccountRemoved from '../screens/AccRemoved';
 
 export type RootStackParamList = {
   SplashIntro: undefined;
@@ -26,6 +27,7 @@ export type RootStackParamList = {
   MoodJournal: undefined;
   MainTabs: undefined;
   Nudge: undefined;
+  AccountRemoved: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -49,6 +51,7 @@ const AppNavigator: React.FC = () => {
       <Stack.Screen name="HighRiskAlert" component={HighRiskAlert} />
       <Stack.Screen name="MoodJournal" component={MoodJournal} />
       <Stack.Screen name="Nudge" component={NudgeScreen} />
+      <Stack.Screen name="AccountRemoved" component={AccountRemoved} />
       <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
     </Stack.Navigator>
   );
