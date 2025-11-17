@@ -27,7 +27,7 @@ const BottomTabNavigator: React.FC = () => {
         tabBarStyle: {
           paddingBottom: 5,
           paddingTop: 5,
-          height: 60,
+          height: 100,
         },
       }}
     >

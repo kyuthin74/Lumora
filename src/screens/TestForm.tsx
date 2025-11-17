@@ -144,7 +144,12 @@ const TestForm: React.FC = () => {
 
       {/* SUBMIT */}
       <View className="mt-4 mb-10">
-        <Button title="Submit" onPress={handleSubmit} />
+        <Button 
+          disabled={!sleepHours || !appetite || !exerciseHours || !screenHours || !studyHours || !socializeAmount || energy === null || !concentration || negativeThoughts === null || !clarity || bothered === null || stressfulEvents === null || !sleepiness || !hopefulness}
+          title="Submit" 
+          onPress={handleSubmit} 
+          variant="primary"
+        />
       </View>
     </ScrollView>
   );
