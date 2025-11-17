@@ -50,11 +50,11 @@ const EmergencyContact: React.FC<Props> = ({ navigation }) => {
       <ScrollView contentContainerClassName="flex-grow px-12 pt-10 pb-16">
         <View className="flex-row justify-end mt-6 mb-6">
           <TouchableOpacity onPress={() => navigation.replace("MainTabs")}>
-            <Text className="text-gray-600 text-2xl">Skip</Text>
+            <Text className="text-gray-600 text-xl">Skip</Text>
           </TouchableOpacity>
         </View>
 
-        <Text className="text-center text-lg text-gray-700 mb-10">
+        <Text className="text-center text-md text-gray-700 mb-10">
           Add an emergency contact who can be contacted in case of emotional
           distress or urgent mental health concerns.
         </Text>
@@ -95,9 +95,9 @@ const EmergencyContact: React.FC<Props> = ({ navigation }) => {
 
         <TouchableOpacity
           onPress={handleSave}
-          className="mt-6 bg-blue-500 py-2 rounded-lg items-center self-center w-36"
+          className="mt-6 bg-primary py-2 rounded-lg items-center self-center w-32"
         >
-          <Text className="text-white text-xl font-semibold">Save</Text>
+          <Text className="text-white text-lg">Save</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
