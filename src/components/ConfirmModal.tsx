@@ -23,6 +23,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
       visible={visible}
       transparent
       animationType="fade"
+      onRequestClose={onCancel}
     >
       <View className="flex-1 justify-center items-center bg-black/40 px-10">
 
@@ -35,7 +36,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </Text>
 
           {/* Message */}
-          <Text className="text-center text-lg text-gray-800 mt-4">
+          <Text className="text-center text-lg text-gray-800 mt-4 px-4">
             {message}
           </Text>
 
