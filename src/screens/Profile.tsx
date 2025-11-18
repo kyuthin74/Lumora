@@ -1,16 +1,99 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import ProfileInput from "../components/ProfileInput";
 import OutButton from "../components/OutButton";
+import ConfirmModal from "../components/ConfirmModal";
+import EditProfile from "../components/EditProfile";
+import { RootStackParamList } from "../navigation/AppNavigator";
+import { BottomTabParamList } from "../navigation/BottomTabNavigator";
 
 const Profile = () => {
+  const tabNavigation = useNavigation<BottomTabNavigationProp<BottomTabParamList, "Profile">>();
+  const rootNavigation = useMemo(() => {
+    return tabNavigation.getParent<NavigationProp<RootStackParamList>>();
+  }, [tabNavigation]);
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
   const [dailyRemindersEnabled, setDailyRemindersEnabled] = useState(true);
   const [riskAlerts, setRiskAlerts] = useState(true);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [profileInfo, setProfileInfo] = useState({
+    displayName: "Alex Johnson",
+    email: "alexjohnson@gmail.com",
+  });
+  const [emergencyContact, setEmergencyContact] = useState({
+    name: "Alex Johnson",
+    relationship: "Cousin",
+    email: "johndoe@gmail.com",
+  });
+  const [activeEditModal, setActiveEditModal] = useState<null | "profile" | "contact">(null);
+
+  const handleLogoutPress = () => setLogoutModalVisible(true);
+  const handleLogoutCancel = () => setLogoutModalVisible(false);
+  const handleLogoutConfirm = () => {
+    setLogoutModalVisible(false);
+    rootNavigation?.navigate("Login");
+  };
+
+  const handleDeletePress = () => setDeleteModalVisible(true);
+  const handleDeleteCancel = () => setDeleteModalVisible(false);
+  const handleDeleteConfirm = () => {
+    setDeleteModalVisible(false);
+    rootNavigation?.navigate("AccountRemoved");
+  };
+
+  const editModalConfig = useMemo(() => {
+    if (activeEditModal === "profile") {
+      return {
+        title: "Edit Profile",
+        fields: [
+          { key: "displayName", label: "Display Name", value: profileInfo.displayName },
+          { key: "email", label: "Email", value: profileInfo.email },
+        ],
+      };
+    }
+
+    if (activeEditModal === "contact") {
+      return {
+        title: "Edit Emergency Contact",
+        fields: [
+          { key: "name", label: "Name", value: emergencyContact.name },
+          { key: "relationship", label: "Relationship", value: emergencyContact.relationship },
+          { key: "email", label: "Email", value: emergencyContact.email },
+        ],
+      };
+    }
+
+    return { title: "", fields: [] };
+  }, [activeEditModal, profileInfo, emergencyContact]);
+
+  const closeEditModal = () => setActiveEditModal(null);
+
+  const handleEditSave = (values: Record<string, string>) => {
+    if (activeEditModal === "profile") {
+      setProfileInfo((prev) => ({
+        ...prev,
+        displayName: values.displayName ?? prev.displayName,
+        email: values.email ?? prev.email,
+      }));
+    } else if (activeEditModal === "contact") {
+      setEmergencyContact((prev) => ({
+        ...prev,
+        name: values.name ?? prev.name,
+        relationship: values.relationship ?? prev.relationship,
+        email: values.email ?? prev.email,
+      }));
+    }
+
+    closeEditModal();
+  };
 
   return (
-    <ScrollView className="flex-1 bg-background px-6 pt-12">
+    <>
+      <ScrollView className="flex-1 bg-background px-6 pt-12">
       {/* Page Title */}
       <View className="pt-4 pb-6" >
         <Text className="text-center text-2xl font-bold text-gray-900">Profile</Text>
@@ -29,14 +112,14 @@ const Profile = () => {
         </View>
 
         {/* Edit icon */}
-        <TouchableOpacity className="absolute top-4 right-4">
+        <TouchableOpacity className="absolute top-4 right-4" onPress={() => setActiveEditModal("profile")}>
           <FontAwesome name="edit" size={22} color="#4093D6" />
         </TouchableOpacity>
 
         {/* Inputs */}
         <View className="mt-5">
-          <ProfileInput label="Display Name" value="Alex Johnson" />
-          <ProfileInput label="Email" value="alexjohnson@gmail.com" />
+          <ProfileInput label="Display Name" value={profileInfo.displayName} />
+          <ProfileInput label="Email" value={profileInfo.email} />
         </View>
       </View>
 
@@ -49,14 +132,14 @@ const Profile = () => {
           </Text>
         </View>
 
-        <TouchableOpacity className="absolute top-4 right-4">
+        <TouchableOpacity className="absolute top-4 right-4" onPress={() => setActiveEditModal("contact")}>
           <FontAwesome name="edit" size={22} color="#4093D6" />
         </TouchableOpacity>
 
         <View className="mt-3">
-          <ProfileInput label="Name" value="Alex Johnson" />
-          <ProfileInput label="Relationship" value="Cousin" />
-          <ProfileInput label="Email" value="johndoe@gmail.com" />
+          <ProfileInput label="Name" value={emergencyContact.name} />
+          <ProfileInput label="Relationship" value={emergencyContact.relationship} />
+          <ProfileInput label="Email" value={emergencyContact.email} />
         </View>
       </View>
 
@@ -173,7 +256,7 @@ const Profile = () => {
       <OutButton
         label="Logout"
         icon="log-out-outline"
-        onPress={() => console.log("Logout pressed")}
+        onPress={handleLogoutPress}
       />
       {/* --- DANGER ZONE --- */}
       <View className="mt-6 mb-20">
@@ -186,10 +269,36 @@ const Profile = () => {
           label="Delete Account"
           icon="trash-outline"
           type="danger"
-          onPress={() => console.log("Delete Account pressed")}
+          onPress={handleDeletePress}
         />
       </View>
-    </ScrollView>
+      </ScrollView>
+
+      <ConfirmModal
+        visible={logoutModalVisible}
+        title="Log out"
+        message="Are you sure you want to log out?"
+        onCancel={handleLogoutCancel}
+        onConfirm={handleLogoutConfirm}
+      />
+
+      <ConfirmModal
+        visible={deleteModalVisible}
+        title="Delete account"
+        message="Are you sure you want to delete your account?"
+        subMessage="Deleting your account will remove all of your information from our database. This cannot be undone."
+        onCancel={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+      />
+
+      <EditProfile
+        visible={!!activeEditModal}
+        title={editModalConfig.title}
+        fields={editModalConfig.fields}
+        onCancel={closeEditModal}
+        onSave={handleEditSave}
+      />
+    </>
   );
 };
 
