@@ -61,7 +61,7 @@ const LogMood: React.FC = () => {
   const [selected, setSelected] = useState<number | null>(null);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
       const handleBack = () => {
-          navigation.navigate('Home');
+          navigation.navigate('MainTabs');
       }
 
   return (

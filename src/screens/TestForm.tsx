@@ -72,6 +72,7 @@ const TestForm: React.FC = () => {
         value={exerciseHours}
         options={["None", "Less than 30 minutes", "30 - 60 minutes", "More than 60 minutes"]}
         onSelect={setExerciseHours}
+        dropdownOffset={86}
       />
 
       <SelectField
@@ -79,6 +80,7 @@ const TestForm: React.FC = () => {
         value={screenHours}
         options={["Less than 2 hours", "2 - 4 hours", "5 - 7 hours", "7 or more hours"]}
         onSelect={setScreenHours}
+        dropdownOffset={86}
       />
 
       <SelectField
@@ -86,6 +88,7 @@ const TestForm: React.FC = () => {
         value={studyHours}
         options={["Less than 4 hours", "4 - 5 hours", "6 - 7 hours", "8 or more hours"]}
         onSelect={setStudyHours}
+        dropdownOffset={86}
       />
 
       <SelectField
@@ -104,6 +107,7 @@ const TestForm: React.FC = () => {
         value={concentration}
         options={["Not at all", "Several times a day", "Half of the day", "All day"]}
         onSelect={setConcentration}
+        dropdownOffset={86}
       />
 
       {/* YES / NO */}
@@ -117,6 +121,7 @@ const TestForm: React.FC = () => {
         value={clarity}
         options={["Clear", "Normal", "A little foggy", "Foggy"]}
         onSelect={setClarity}
+        dropdownOffset={86}
       />
       
       {/* YES / NO */}
