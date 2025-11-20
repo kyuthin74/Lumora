@@ -30,7 +30,7 @@ const NudgeScreen: React.FC = () => {
         </Text>
 
         <TouchableOpacity
-          onPress={() => navigation.navigate("Home")}
+          onPress={() => navigation.navigate("MainTabs")}
           className="mt-6 bg-primary py-2 rounded-lg items-center self-center w-32"
         >
           <Text className="text-white text-lg">Done</Text>

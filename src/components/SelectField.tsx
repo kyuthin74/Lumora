@@ -7,6 +7,7 @@ interface SelectFieldProps {
   value: string | null;
   options: string[];
   onSelect: (value: string) => void;
+  dropdownOffset?: number;
 }
 
 const SelectField: React.FC<SelectFieldProps> = ({
@@ -14,6 +15,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
   value,
   options,
   onSelect,
+  dropdownOffset,
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -38,7 +40,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
       {open && (
         <View className="mt-1 border border-primary-200 bg-white rounded-lg shadow-lg" style={{
         position: "absolute",
-        top: 65,
+        top: dropdownOffset?? 65,
         left: 0,
         right: 0,
         zIndex: 100,
