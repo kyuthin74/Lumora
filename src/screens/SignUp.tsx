@@ -1,5 +1,14 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, Image, TouchableOpacity, GestureResponderEvent } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  GestureResponderEvent,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import { useNavigation } from "@react-navigation/native";
@@ -12,7 +21,13 @@ type SignUpScreenNavigationProp = NativeStackNavigationProp<
   "SignUp"
 >;
 
-const Checkbox = ({ checked, onToggle }: { checked: boolean; onToggle: () => void }) => (
+const Checkbox = ({
+  checked,
+  onToggle,
+}: {
+  checked: boolean;
+  onToggle: () => void;
+}) => (
   <TouchableOpacity
     accessibilityRole="checkbox"
     accessibilityState={{ checked }}
@@ -65,9 +80,6 @@ const SignUp = () => {
     });
   };
 
-  // --------------------------------------------------------------
-  // ✅ Added: REST API Template
-  // --------------------------------------------------------------
   const registerUser = async () => {
     return {
       success: true,
@@ -80,9 +92,6 @@ const SignUp = () => {
     return emailPattern.test(value);
   };
 
-  // --------------------------------------------------------------
-  // ✅ Added: Validation + Submit function
-  // --------------------------------------------------------------
   const handleSignUp = async () => {
     const trimmedUsername = username.trim();
     const trimmedEmail = email.trim();
@@ -93,18 +102,16 @@ const SignUp = () => {
       email: !trimmedEmail
         ? "Email is required"
         : isValidEmail(trimmedEmail)
-          ? ""
-          : "Please enter a valid email",
+        ? ""
+        : "Please enter a valid email",
       password: trimmedPassword ? "" : "Password is required",
       agree: agree ? "" : "You must agree to the terms",
     };
 
     setErrors(newErrors);
 
-    // stop if any field invalid
     if (Object.values(newErrors).some((msg) => msg !== "")) return;
 
-    // Call backend API (template)
     const res = await registerUser();
 
     if (res.success) {
@@ -113,98 +120,107 @@ const SignUp = () => {
   };
 
   return (
-    <View className="flex-1 bg-background px-6 justify-center">
-      <View className="items-center mb-10">
-        <Image
-          source={require("../assets/Lumora.png")}
-          className="h-[180px] w-[180px] mb-10"
-          resizeMode="contain"
-        />
-      </View>
-
-      <Text className="text-2xl font-bold text-gray-900 mb-4">Create account</Text>
-
-      {/* --------------------------------------------------------------
-          Username Input + Error
-      -------------------------------------------------------------- */}
-      <Input
-        icon="user"
-        placeholder="Username"
-        value={username}
-        onChangeText={(text) => {
-          setUsername(text);
-          if (errors.username) clearError("username");
-        }}
-      />
-      {errors.username ? (
-        <Text className="text-red-500 ml-2 -mt-3 mb-2">{errors.username}</Text>
-      ) : null}
-
-      {/* --------------------------------------------------------------
-          Email Input + Error
-      -------------------------------------------------------------- */}
-      <Input
-        icon="envelope"
-        placeholder="Email"
-        value={email}
-        onChangeText={(text) => {
-          setEmail(text);
-          if (errors.email) clearError("email");
-        }}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      {errors.email ? (
-        <Text className="text-red-500 ml-2 -mt-3 mb-2">{errors.email}</Text>
-      ) : null}
-
-      {/* --------------------------------------------------------------
-          Password Input + Error
-      -------------------------------------------------------------- */}
-      <Input
-        icon="lock"
-        placeholder="Password"
-        secureTextEntry={!passwordVisible}
-        value={password}
-        onChangeText={(text) => {
-          setPassword(text);
-          if (errors.password) clearError("password");
-        }}
-        rightIcon={passwordVisible ? "eye" : "eye-slash"}
-        onRightIconPress={() => setPasswordVisible((prev) => !prev)}
-      />
-      {errors.password ? (
-        <Text className="text-red-500 ml-2 -mt-3 mb-2">{errors.password}</Text>
-      ) : null}
-
-      {/* --------------------------------------------------------------
-          Terms & Conditions + Error
-      -------------------------------------------------------------- */}
-      <TouchableOpacity
-        className="flex-row items-center mb-2"
-        onPress={toggleAgree}
-        activeOpacity={0.8}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
       >
-        <Checkbox checked={agree} onToggle={toggleAgree} />
-        <Text className="ml-1 text-primary">I agree Terms & Conditions</Text>
-      </TouchableOpacity>
+        <View className="flex-1 bg-background px-6 justify-center">
+          <View className="items-center mb-8">
+            <Image
+              source={require("../assets/Lumora.png")}
+              className="h-[140px] w-[140px] mb-6"
+              resizeMode="contain"
+            />
+          </View>
 
-      {errors.agree ? (
-        <Text className="text-red-500 ml-2 mb-4">{errors.agree}</Text>
-      ) : null}
+          <Text className="text-2xl font-bold text-gray-900 mb-4">
+            Create account
+          </Text>
 
-      {/* --------------------------------------------------------------
-          Submit Button
-      -------------------------------------------------------------- */}
-      <Button title="Sign up" onPress={handleSignUp} />
+          {/* Username */}
+          <Input
+            icon="user"
+            placeholder="Username"
+            value={username}
+            onChangeText={(text) => {
+              setUsername(text);
+              if (errors.username) clearError("username");
+            }}
+          />
+          {errors.username ? (
+            <Text className="text-red-500 ml-2 -mt-3 mb-4">
+              {errors.username}
+            </Text>
+          ) : null}
 
-      <View className="flex-row justify-center mt-12">
-        <Text className="text-lg text-gray-700">Already have an account? </Text>
-        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-          <Text className="text-lg text-primary font-semibold">Log in</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+          {/* Email */}
+          <Input
+            icon="envelope"
+            placeholder="Email"
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (errors.email) clearError("email");
+            }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          {errors.email ? (
+            <Text className="text-red-500 ml-2 -mt-3 mb-4">
+              {errors.email}
+            </Text>
+          ) : null}
+
+          {/* Password */}
+          <Input
+            icon="lock"
+            placeholder="Password"
+            secureTextEntry={!passwordVisible}
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (errors.password) clearError("password");
+            }}
+            rightIcon={passwordVisible ? "eye" : "eye-slash"}
+            onRightIconPress={() => setPasswordVisible((prev) => !prev)}
+          />
+          {errors.password ? (
+            <Text className="text-red-500 ml-2 -mt-3 mb-4">
+              {errors.password}
+            </Text>
+          ) : null}
+
+          {/* Terms */}
+          <TouchableOpacity
+            className="flex-row items-center mb-6"
+            onPress={toggleAgree}
+            activeOpacity={0.8}
+          >
+            <Checkbox checked={agree} onToggle={toggleAgree} />
+            <Text className="ml-1 text-primary">I agree Terms & Conditions</Text>
+          </TouchableOpacity>
+
+          {errors.agree ? (
+            <Text className="text-red-500 ml-2 mb-4">{errors.agree}</Text>
+          ) : null}
+
+          <Button title="Sign up" onPress={handleSignUp} />
+
+          <View className="flex-row justify-center mt-[60px]">
+            <Text className="text-lg text-gray-700">
+              Already have an account?{" "}
+            </Text>
+            <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+              <Text className="text-lg text-primary font-semibold">Log in</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
