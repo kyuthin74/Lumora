@@ -52,7 +52,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
       {isDropdownOpen && (
         <View className="mt-1 border border-primary-200 bg-white rounded-lg shadow-lg" style={{
         position: "absolute",
-        top: dropdownOffset?? 65,
+        top: dropdownOffset?? 80,
         left: 0,
         right: 0,
         zIndex: 100,
