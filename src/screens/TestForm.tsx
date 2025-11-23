@@ -307,7 +307,7 @@ const TestForm: React.FC = () => {
         options={[
           'Very hopeful',
           'Somewhat hopeful',
-          'Not very Hopeful',
+          'Not very hopeful',
           'No hope at all',
         ]}
         onSelect={setHopefulness}

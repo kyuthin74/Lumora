@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -37,8 +37,12 @@ const Home: React.FC = () => {
   const riskValue = route.params?.riskValue;
   const [affirmationIndex, setAffirmationIndex] = useState(0);
 
-  console.log('Home screen - received riskValue:', riskValue);
-  console.log('Home screen - route.params:', route.params);
+  useEffect(() => {
+    console.log('Home screen - useEffect - riskValue:', riskValue);
+    console.log('Home screen - useEffect - route.params:', route.params);
+    console.log('Home screen - useEffect - riskValue * 100:', riskValue ? riskValue * 100 : 'undefined');
+    console.log('Home screen - useEffect - Math.round(riskValue * 100):', riskValue ? Math.round(riskValue * 100) : 'undefined');
+  }, [riskValue, route.params]);
 
   const nextAffirmation = () => {
     setAffirmationIndex((prev) => (prev + 1) % affirmations.length);
