@@ -163,7 +163,7 @@ const TestForm: React.FC = () => {
           'More than 60 minutes',
         ]}
         onSelect={setExerciseHours}
-        dropdownOffset={86}
+        dropdownOffset={100}
         isOpen={openDropdown === 'exerciseHours'}
         onToggle={() =>
           setOpenDropdown(
@@ -182,7 +182,7 @@ const TestForm: React.FC = () => {
           '7 or more hours',
         ]}
         onSelect={setScreenHours}
-        dropdownOffset={86}
+        dropdownOffset={100}
         isOpen={openDropdown === 'screenHours'}
         onToggle={() =>
           setOpenDropdown(openDropdown === 'screenHours' ? null : 'screenHours')
@@ -199,7 +199,7 @@ const TestForm: React.FC = () => {
           '8 or more hours',
         ]}
         onSelect={setStudyHours}
-        dropdownOffset={86}
+        dropdownOffset={100}
         isOpen={openDropdown === 'studyHours'}
         onToggle={() =>
           setOpenDropdown(openDropdown === 'studyHours' ? null : 'studyHours')
@@ -240,7 +240,7 @@ const TestForm: React.FC = () => {
           'All day',
         ]}
         onSelect={setConcentration}
-        dropdownOffset={86}
+        dropdownOffset={100}
         isOpen={openDropdown === 'concentration'}
         onToggle={() =>
           setOpenDropdown(
@@ -262,7 +262,7 @@ const TestForm: React.FC = () => {
         value={clarity}
         options={['Clear', 'Normal', 'A little foggy', 'Foggy']}
         onSelect={setClarity}
-        dropdownOffset={86}
+        dropdownOffset={100}
         isOpen={openDropdown === 'clarity'}
         onToggle={() =>
           setOpenDropdown(openDropdown === 'clarity' ? null : 'clarity')
