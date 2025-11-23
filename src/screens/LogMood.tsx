@@ -64,6 +64,11 @@ const LogMood: React.FC = () => {
           navigation.navigate('MainTabs');
       }
 
+  const getSelectedMoodLabel = () => {
+    const mood = moods.find(m => m.id === selected);
+    return mood ? mood.label : "";
+  };
+
   return (
     <ScrollView className="flex-1 bg-gray-50 px-6 pt-6">
       {/* Back Button */}
@@ -122,7 +127,7 @@ const LogMood: React.FC = () => {
         <Button
           title="Continue"
           disabled={!selected}
-          onPress={() => navigation.navigate("TestForm")}
+          onPress={() => navigation.navigate("TestForm", { mood: getSelectedMoodLabel() })}
           variant="primary"
         />
       </View>

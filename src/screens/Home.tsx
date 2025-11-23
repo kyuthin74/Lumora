@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
@@ -19,6 +19,7 @@ import {
   Star
 } from "lucide-react-native";
 import type { RootStackParamList } from '../navigation/AppNavigator';
+import type { BottomTabParamList } from '../navigation/BottomTabNavigator';
 import Button from '../components/Button';
 
 const affirmations = [
@@ -32,7 +33,12 @@ const affirmations = [
 const Home: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<BottomTabParamList, 'Home'>>();
+  const riskValue = route.params?.riskValue;
   const [affirmationIndex, setAffirmationIndex] = useState(0);
+
+  console.log('Home screen - received riskValue:', riskValue);
+  console.log('Home screen - route.params:', route.params);
 
   const nextAffirmation = () => {
     setAffirmationIndex((prev) => (prev + 1) % affirmations.length);
@@ -126,7 +132,7 @@ const Home: React.FC = () => {
           </View>
 
 
-          {/* Today's Science-Based Nudges */}
+          {/* AI Insights */}
           <Card className="p-5 bg-primary-100 border border-primary">
             <View className="flex-row items-start gap-2 mb-2">
               <Brain className="w-5 h-5 mt-0.5" color="#4093d6" />
@@ -138,19 +144,35 @@ const Home: React.FC = () => {
             <View className="flex gap-4 px-2">
               <View>
                 <Text className="text-gray-800 text-lg">
-                  Based on your recent entries, you will likely be at depression risk 70%. We suggest you to take an appointment with a mental health doctor.                </Text>
-              </View>
-              <View className="flex-row gap-3 items-center">
-                <Text className="text-md ">Depression Risk
+                  {riskValue !== undefined ? (
+                    riskValue <= 0.3 
+                      ? `Based on your recent entries, you have a low depression risk of ${Math.round(riskValue * 100)}%. Keep up your positive habits and self-care practices.`
+                      : riskValue <= 0.65
+                      ? `Based on your recent entries, you have a moderate depression risk of ${Math.round(riskValue * 100)}%. Consider maintaining regular self-care and reaching out to friends or family.`
+                      : `Based on your recent entries, you have a high depression risk of ${Math.round(riskValue * 100)}%. We strongly suggest you to take an appointment with a mental health professional.`
+                  ) : (
+                    "Complete your daily check-in to get personalized insights about your mental health."
+                  )}
                 </Text>
-                <View className="bg-danger px-4 py-1 rounded-xl">
-                  <Text className="text-white font-semibold text-md"> High </Text>
-                </View>
               </View>
+              {riskValue !== undefined && (
+                <View className="flex-row gap-3 items-center">
+                  <Text className="text-md">Depression Risk</Text>
+                  <View className={`px-4 py-1 rounded-xl ${
+                    riskValue <= 0.3 ? 'bg-green-600' :
+                    riskValue <= 0.65 ? 'bg-yellow-600' :
+                    'bg-danger'
+                  }`}>
+                    <Text className="text-white font-semibold text-md">
+                      {riskValue <= 0.3 ? ' Low ' : riskValue <= 0.65 ? ' Medium ' : ' High '}
+                    </Text>
+                  </View>
+                </View>
+              )}
             </View>
           </Card>
 
-          {/* AI Insights */}
+          {/*  Today's Science-Based Nudges*/}
           <Card className="p-5 bg-paleGreen border border-green-300">
             <View className="flex-row items-start gap-2 mb-2">
               <Star className="w-5 h-5 mt-0.5" color="#D7BB0A" fill="#D7BB0A"/>

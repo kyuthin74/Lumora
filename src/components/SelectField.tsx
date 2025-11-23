@@ -8,6 +8,8 @@ interface SelectFieldProps {
   options: string[];
   onSelect: (value: string) => void;
   dropdownOffset?: number;
+  isOpen?: boolean;
+  onToggle?: () => void;
 }
 
 const SelectField: React.FC<SelectFieldProps> = ({
@@ -16,19 +18,29 @@ const SelectField: React.FC<SelectFieldProps> = ({
   options,
   onSelect,
   dropdownOffset,
+  isOpen,
+  onToggle,
 }) => {
   const [open, setOpen] = useState(false);
+  const isControlled = isOpen !== undefined && onToggle !== undefined;
+  const isDropdownOpen = isControlled ? isOpen : open;
 
   return (
-    <View className="mb-4" style={{ zIndex: open ? 10 : 1,position: "relative",
+    <View className="mb-4 mt-2" style={{ zIndex: isDropdownOpen ? 10 : 1,position: "relative",
     overflow: "visible", }}>
       
-      {label && <Text className="text-gray-700 text-base font-semibold mb-1">{label}</Text>}
+      {label && <Text className="text-gray-700 text-base font-semibold mb-3">{label}</Text>}
 
       {/* Input Field */}
       <TouchableOpacity
-        onPress={() => setOpen((prev) => !prev)}
-        className="border border-primary-200 bg-white rounded-lg px-4 h-12 flex-row items-center justify-between"
+        onPress={() => {
+          if (isControlled) {
+            onToggle();
+          } else {
+            setOpen((prev) => !prev);
+          }
+        }}
+        className="border border-primary-200 bg-white rounded-lg px-4 h-14 flex-row items-center justify-between"
       >
         <Text className={value ? "text-gray-700" : "text-gray-500"}>
           {value || "Select option"}
@@ -37,7 +49,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
       </TouchableOpacity>
 
       {/* Dropdown List */}
-      {open && (
+      {isDropdownOpen && (
         <View className="mt-1 border border-primary-200 bg-white rounded-lg shadow-lg" style={{
         position: "absolute",
         top: dropdownOffset?? 65,
@@ -51,7 +63,11 @@ const SelectField: React.FC<SelectFieldProps> = ({
               key={opt}
               onPress={() => {
                 onSelect(opt);
-                setOpen(false); // close dropdown
+                if (isControlled) {
+                  onToggle();
+                } else {
+                  setOpen(false);
+                }
               }}
               className="px-4 py-3"
             >
