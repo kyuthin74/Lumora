@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Login from '../screens/Login';
 import SignUp from '../screens/SignUp';
 import BottomTabNavigator from './BottomTabNavigator';
+import type { BottomTabParamList } from './BottomTabNavigator';
 import EmergencyContact from '../screens/EmergencyContact';
 import SplashIntro from '../screens/SplashIntro';
 import SplashFeatures from '../screens/SplashFeatures';
@@ -13,6 +14,7 @@ import MoodJournal from '../screens/MoodJournal';
 import Home from '../screens/Home';
 import NudgeScreen from '../screens/Nudge';
 import AccountRemoved from '../screens/AccRemoved';
+import { NavigatorScreenParams } from '@react-navigation/native';
 
 export type RootStackParamList = {
   SplashIntro: undefined;
@@ -22,11 +24,11 @@ export type RootStackParamList = {
   EmergencyContact: undefined;
   Home: undefined,
   LogMood: undefined;
-  TestForm: undefined;
+  TestForm: { mood: string };
   HighRiskAlert: undefined;
   MoodJournal: undefined;
-  MainTabs: undefined;
-  Nudge: undefined;
+  MainTabs: NavigatorScreenParams<BottomTabParamList>;
+  Nudge: { riskValue: number };
   AccountRemoved: undefined;
 };
 

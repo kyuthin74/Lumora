@@ -8,7 +8,7 @@ import Chatbot from '../screens/Chatbot';
 import Profile from '../screens/Profile';
 
 export type BottomTabParamList = {
-  Home: undefined;
+  Home: { riskValue?: number } | undefined;
   Mood: undefined;
   Analysis: undefined;
   Chatbot: undefined;
