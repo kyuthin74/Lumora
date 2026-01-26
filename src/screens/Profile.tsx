@@ -9,6 +9,8 @@ import ConfirmModal from "../components/ConfirmModal";
 import EditProfile from "../components/EditProfile";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { BottomTabParamList } from "../navigation/BottomTabNavigator";
+import DateTimePicker from "@react-native-community/datetimepicker";
+
 
 const Profile = () => {
   const tabNavigation = useNavigation<BottomTabNavigationProp<BottomTabParamList, "Profile">>();
@@ -17,6 +19,8 @@ const Profile = () => {
   }, [tabNavigation]);
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
   const [dailyRemindersEnabled, setDailyRemindersEnabled] = useState(true);
+  const [reminderTime, setReminderTime] = useState(new Date());
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [riskAlerts, setRiskAlerts] = useState(true);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -90,6 +94,23 @@ const Profile = () => {
 
     closeEditModal();
   };
+
+  const formatTime = (date: Date) => {
+  return date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
+  const onTimeChange = (_: any, selectedTime?: Date) => {
+    setShowTimePicker(false);
+
+    if (selectedTime) {
+      setReminderTime(selectedTime);
+    }
+  };
+
 
   return (
     <>
@@ -191,10 +212,24 @@ const Profile = () => {
             <View className="w-[2px] rounded-full bg-[#D9D9D9]" />
             <View className="flex-1 ml-4">
               <Text className="text-gray-800 font-semibold mb-2">Reminder Time</Text>
-              <View className="border border-muted bg-background rounded-xl p-2 flex-row items-center justify-between w-1/2 min-w-[140px] self-start">
-                <Text className="text-gray-900 text-lg">09:00 AM</Text>
+              <TouchableOpacity
+                onPress={() => setShowTimePicker(true)}
+                className="border border-muted bg-background rounded-xl p-2 flex-row items-center justify-between w-1/2 min-w-[140px] self-start"
+                >
+                <Text className="text-gray-900 text-lg">
+                  {formatTime(reminderTime)}
+                </Text>
                 <FontAwesome name="clock-o" size={20} color="#333" />
-              </View>
+              </TouchableOpacity>
+              {showTimePicker && (
+                <DateTimePicker
+                  value={reminderTime}
+                  mode="time"
+                  is24Hour={false}
+                  display="default"
+                  onChange={onTimeChange}
+                />
+              )}
             </View>
           </View>
         )}
