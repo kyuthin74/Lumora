@@ -96,7 +96,8 @@ const MoodJournal = () => {
   const [note, setNote] = useState("");
 
   return (
-    <ScrollView className="flex-1 bg-background px-6 pt-10">
+    <ScrollView className="flex-1 bg-background px-6 pt-10" nestedScrollEnabled={true}
+      contentContainerStyle={{ paddingBottom: 100 }}>
       {/* Title */}
       <Text className="text-2xl font-bold text-center mb-2">Mood Journaling</Text>
       <Text className="text-gray-600 text-center mb-10">
@@ -117,7 +118,7 @@ const MoodJournal = () => {
               className="w-[22%] items-center mb-4"
             >
               <View
-                className="w-full items-center justify-between rounded-2xl bg-white p-2"
+                className="w-full items-center justify-center rounded-2xl bg-white p-2"
                 style={{
                   aspectRatio: 1,
                   borderWidth: isSelected ? 2 : 1,
