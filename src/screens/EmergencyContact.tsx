@@ -12,21 +12,75 @@ import {
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../navigation/AppNavigator";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import Button from "../components/Button";
+
+const API_BASE_URL =
+  Platform.OS === "android"
+    ? "http://10.0.2.2:8000"
+    : "http://127.0.0.1:8000";
 
 const EmergencyContact: React.FC = () => {
   const [name, setName] = useState("");
   const [relationship, setRelationship] = useState("");
   const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const handleSave = () => {
+  const route = useRoute<RouteProp<RootStackParamList, "EmergencyContact">>();
+  const userId = route.params?.userId;
+  const token = route.params?.token;
+
+  const handleSave = async () => {
     if (!name || !relationship || !email) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
-    // Navigate to MainTabs after saving
-    navigation.replace("MainTabs");
+
+    if (!userId) {
+      Alert.alert("Error", "Missing user id. Please log in again.");
+      return;
+    }
+
+    if (!token) {
+      Alert.alert("Error", "Missing auth token. Please log in again.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/emergency-contact/${userId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          contact_name: name,
+          contact_email: email,
+          relationship,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const message =
+          (data && (data.message || data.detail)) ||
+          "Unable to save contact. Please try again.";
+        throw new Error(message);
+      }
+
+      navigation.replace("MainTabs");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.";
+      Alert.alert("Save failed", message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -81,8 +135,8 @@ const EmergencyContact: React.FC = () => {
         </View>
 
         <Button
-          disabled={!name || !relationship || !email}
-          title="Save"
+          disabled={!name || !relationship || !email || isSubmitting}
+          title={isSubmitting ? "Saving..." : "Save"}
           onPress={handleSave}
           variant="short"
           className="mt-6 self-center w-36"
