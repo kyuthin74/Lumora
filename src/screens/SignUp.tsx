@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from "react-native";
 import Input from "../components/Input";
 import Button from "../components/Button";
@@ -15,6 +16,12 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import Icon from "react-native-vector-icons/Feather";
+
+// Use Android emulator loopback when on Android
+const API_BASE_URL =
+  Platform.OS === "android"
+    ? "http://10.0.2.2:8000"
+    : "http://127.0.0.1:8000";
 
 type SignUpScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -59,6 +66,7 @@ const SignUp = () => {
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [agree, setAgree] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<SignUpErrors>({
     username: "",
     email: "",
@@ -80,11 +88,65 @@ const SignUp = () => {
     });
   };
 
-  const registerUser = async () => {
-    return {
-      success: true,
-      message: "Account created successfully",
-    };
+  const extractUserId = useCallback((data: unknown): string | undefined => {
+    if (!data || typeof data !== "object") return undefined;
+    const obj = data as Record<string, unknown>;
+
+    const direct =
+      obj.user_id ?? obj.userId ?? obj.userid ?? obj.id ?? obj.user ?? obj.data;
+
+    if (typeof direct === "string" || typeof direct === "number") {
+      return String(direct);
+    }
+
+    if (direct && typeof direct === "object") {
+      const nested = (direct as Record<string, unknown>).id ??
+        (direct as Record<string, unknown>).user_id ??
+        (direct as Record<string, unknown>).userId;
+      if (typeof nested === "string" || typeof nested === "number") {
+        return String(nested);
+      }
+    }
+
+    return undefined;
+  }, []);
+
+  const extractToken = useCallback((data: unknown): string | undefined => {
+    if (!data || typeof data !== "object") return undefined;
+    const obj = data as Record<string, unknown>;
+    const token = obj.access_token ?? obj.token ?? obj.accessToken;
+    if (typeof token === "string") return token;
+    return undefined;
+  }, []);
+
+  const registerUser = async (payload: {
+    email: string;
+    full_name: string;
+    password: string;
+  }) => {
+    const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...payload,
+        is_notify_enabled: false,
+        daily_reminder_time: null,
+        is_risk_alert_enabled: false,
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const message =
+        (data && (data.message || data.detail)) ||
+        "Unable to create account. Please try again.";
+      throw new Error(message);
+    }
+
+    return data;
   };
 
   const isValidEmail = (value: string) => {
@@ -112,10 +174,43 @@ const SignUp = () => {
 
     if (Object.values(newErrors).some((msg) => msg !== "")) return;
 
-    const res = await registerUser();
+    setIsSubmitting(true);
 
-    if (res.success) {
-      navigation.navigate("EmergencyContact");
+    try {
+      const data = await registerUser({
+        email: trimmedEmail,
+        full_name: trimmedUsername,
+        password: trimmedPassword,
+      });
+
+      const userId = extractUserId(data);
+      const token = extractToken(data);
+
+      if (!userId) {
+        const keys = data && typeof data === "object" ? Object.keys(data as Record<string, unknown>).join(", ") : "";
+        console.warn("Signup response missing user id", data);
+        Alert.alert(
+          "Sign up failed",
+          `Missing user id from server response. Returned keys: ${keys || "none"}`
+        );
+        return;
+      }
+
+      if (!token) {
+        console.warn("Signup response missing access token", data);
+        Alert.alert("Sign up failed", "Missing access token from server response.");
+        return;
+      }
+
+      navigation.navigate("EmergencyContact", { userId, token });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.";
+      Alert.alert("Sign up failed", message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -208,7 +303,11 @@ const SignUp = () => {
             <Text className="text-red-500 ml-2 mb-4">{errors.agree}</Text>
           ) : null}
 
-          <Button title="Sign up" onPress={handleSignUp} />
+          <Button
+            title={isSubmitting ? "Signing up..." : "Sign up"}
+            onPress={handleSignUp}
+            disabled={isSubmitting}
+          />
 
           <View className="flex-row justify-center mt-[60px]">
             <Text className="text-lg text-gray-700">

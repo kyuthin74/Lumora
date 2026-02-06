@@ -21,7 +21,7 @@ export type RootStackParamList = {
   SplashFeatures: undefined;
   Login: undefined;
   SignUp: undefined;
-  EmergencyContact: undefined;
+  EmergencyContact: { userId?: string; token?: string } | undefined;
   Home: undefined,
   LogMood: undefined;
   TestForm: { mood: string };
