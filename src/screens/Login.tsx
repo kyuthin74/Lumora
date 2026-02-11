@@ -9,6 +9,7 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import { useNavigation } from "@react-navigation/native";
@@ -19,6 +20,27 @@ const API_BASE_URL =
   Platform.OS === "android"
     ? "http://10.0.2.2:8000"
     : "http://127.0.0.1:8000";
+
+// Check if user has emergency contact (returns true if exists)
+const checkEmergencyContactExists = async (userId: string, token: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/emergency-contact/${userId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    // If 200 OK and has valid data, contact exists
+    if (response.ok) {
+      const data = await response.json();
+      return !!(data && data.contact_name);
+    }
+    return false;
+  } catch {
+    // On error, assume no contact (will show form)
+    return false;
+  }
+};
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -124,7 +146,20 @@ const Login = () => {
         return;
       }
 
-      navigation.navigate("EmergencyContact", { userId, token });
+      // Store credentials in AsyncStorage
+      await AsyncStorage.setItem("userId", userId);
+      await AsyncStorage.setItem("authToken", token);
+
+      // Check if user already has emergency contact
+      const hasEmergencyContact = await checkEmergencyContactExists(userId, token);
+      
+      if (hasEmergencyContact) {
+        // Skip emergency contact form, go directly to main app
+        navigation.replace("MainTabs", { screen: "Home" });
+      } else {
+        // Show emergency contact form
+        navigation.navigate("EmergencyContact", { userId, token });
+      }
     } catch (error) {
       const message =
         error instanceof Error

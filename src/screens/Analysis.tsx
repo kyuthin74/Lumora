@@ -5,6 +5,7 @@ import {
   ScrollView,
   LayoutChangeEvent,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 import Svg, {
   Line,
@@ -13,6 +14,7 @@ import Svg, {
   Text as SvgText,
   Path,
 } from 'react-native-svg';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 
 interface RiskPoint {
   day: string;
@@ -25,7 +27,8 @@ interface MoodSlice {
   color: string;
 }
 
-const weeklyRiskData: RiskPoint[] = [
+// Week 1 data for Depression Risk Trend
+const weeklyRiskDataWeek1: RiskPoint[] = [
   { day: 'Mon', value: 52 },
   { day: 'Tue', value: 60 },
   { day: 'Wed', value: 38 },
@@ -35,7 +38,21 @@ const weeklyRiskData: RiskPoint[] = [
   { day: 'Sun', value: 43 },
 ];
 
-const moodDistribution: MoodSlice[] = [
+// Week 2 data for Depression Risk Trend
+const weeklyRiskDataWeek2: RiskPoint[] = [
+  { day: 'Mon', value: 35 },
+  { day: 'Tue', value: 45 },
+  { day: 'Wed', value: 55 },
+  { day: 'Thu', value: 40 },
+  { day: 'Fri', value: 30 },
+  { day: 'Sat', value: 25 },
+  { day: 'Sun', value: 28 },
+];
+
+const allRiskData = [weeklyRiskDataWeek1, weeklyRiskDataWeek2];
+
+// Week 1 data for Mood Distribution
+const moodDistributionWeek1: MoodSlice[] = [
   { label: 'Happy', value: 3, color: '#FEC9A7' },
   { label: 'Stressed', value: 1, color: '#FCA5A5' },
   { label: 'Satisfied', value: 2, color: '#BBF7D0' },
@@ -45,10 +62,23 @@ const moodDistribution: MoodSlice[] = [
   { label: 'Energetic', value: 1, color: '#FACC15' },
 ];
 
-const CHART_HEIGHT = 200;
+// Week 2 data for Mood Distribution
+const moodDistributionWeek2: MoodSlice[] = [
+  { label: 'Happy', value: 4, color: '#FEC9A7' },
+  { label: 'Stressed', value: 0, color: '#FCA5A5' },
+  { label: 'Satisfied', value: 3, color: '#BBF7D0' },
+  { label: 'Sad', value: 0, color: '#BFDBFE' },
+  { label: 'Neutral', value: 1, color: '#E5E7EB' },
+  { label: 'Tired', value: 2, color: '#D1D5DB' },
+  { label: 'Energetic', value: 2, color: '#FACC15' },
+];
+
+const allMoodData = [moodDistributionWeek1, moodDistributionWeek2];
+
+const CHART_HEIGHT = 130;
 const Y_AXIS_LABEL_WIDTH = 30;
 const CHART_HORIZONTAL_PADDING = 10;
-const CHART_VERTICAL_PADDING = 20;
+const CHART_VERTICAL_PADDING = 12;
 const TOP_MARGIN = 12;
 const INNER_CHART_HEIGHT = CHART_HEIGHT - TOP_MARGIN;
 
@@ -69,6 +99,28 @@ const analysisStyles = StyleSheet.create({
 
 const Analysis: React.FC = () => {
   const [layoutWidth, setLayoutWidth] = useState(0);
+  const [riskWeekIndex, setRiskWeekIndex] = useState(0);
+  const [moodWeekIndex, setMoodWeekIndex] = useState(0);
+
+  // Get current week's data
+  const weeklyRiskData = allRiskData[riskWeekIndex];
+  const moodDistribution = allMoodData[moodWeekIndex];
+
+  // Navigation functions for risk chart
+  const nextRiskWeek = () => {
+    setRiskWeekIndex((prev) => (prev + 1) % allRiskData.length);
+  };
+  const prevRiskWeek = () => {
+    setRiskWeekIndex((prev) => (prev - 1 + allRiskData.length) % allRiskData.length);
+  };
+
+  // Navigation functions for mood chart
+  const nextMoodWeek = () => {
+    setMoodWeekIndex((prev) => (prev + 1) % allMoodData.length);
+  };
+  const prevMoodWeek = () => {
+    setMoodWeekIndex((prev) => (prev - 1 + allMoodData.length) % allMoodData.length);
+  };
 
   const canvasWidth = useMemo(
     () => Math.max(layoutWidth - CHART_HORIZONTAL_PADDING * 2, 0),
@@ -109,15 +161,15 @@ const Analysis: React.FC = () => {
         return `${x},${y}`;
       })
       .join(' ');
-  }, [chartInnerWidth]);
+  }, [chartInnerWidth, weeklyRiskData]);
 
   const pieArcs = useMemo(() => {
     const total = moodDistribution.reduce((sum, slice) => sum + slice.value, 0);
     if (!total) return [];
 
-    const cx = 100;
-    const cy = 100;
-    const radius = 80;
+    const cx = 65;
+    const cy = 65;
+    const radius = 52;
     let cumulative = 0;
 
     const describeArc = (startAngle: number, endAngle: number) => {
@@ -152,7 +204,7 @@ const Analysis: React.FC = () => {
         key: slice.label,
       };
     });
-  }, []);
+  }, [moodDistribution]);
 
   const handleChartLayout = (event: LayoutChangeEvent) => {
     const width = event.nativeEvent.layout.width;
@@ -272,6 +324,44 @@ const Analysis: React.FC = () => {
               )}
             </View>
           </View>
+
+          {/* Pagination for Risk Chart */}
+          <View className="flex-row items-center justify-between mt-4 px-2">
+            <TouchableOpacity
+              onPress={prevRiskWeek}
+              disabled={riskWeekIndex === 0}
+              className="flex-row items-center gap-1"
+              activeOpacity={0.7}
+            >
+              <View className={`w-8 h-8 rounded-full items-center justify-center ${riskWeekIndex === 0 ? 'bg-white/10' : 'bg-white/20'}`}>
+                <ChevronLeft size={18} color={riskWeekIndex === 0 ? '#ffffff80' : '#ffffff'} />
+              </View>
+              <Text className={`text-xs ${riskWeekIndex === 0 ? 'text-white/50' : 'text-white'}`}>Previous Week</Text>
+            </TouchableOpacity>
+
+            <View className="flex-row gap-2">
+              {allRiskData.map((_, idx) => (
+                <View
+                  key={idx}
+                  className={`h-2 rounded-full ${idx === riskWeekIndex ? "bg-white w-6" : "bg-white/40 w-2"}`}
+                />
+              ))}
+            </View>
+
+            <TouchableOpacity
+              onPress={nextRiskWeek}
+              disabled={riskWeekIndex === allRiskData.length - 1}
+              className="flex-row items-center gap-1"
+              activeOpacity={0.7}
+            >
+              <Text className={`text-xs ${riskWeekIndex === allRiskData.length - 1 ? 'text-white/50' : 'text-white'}`}>Next Week</Text>
+              
+                <View className={`w-8 h-8 rounded-full items-center justify-center ${riskWeekIndex === 0 ? 'bg-white/10' : 'bg-white/20'}`}>
+                <ChevronRight size={18} color={riskWeekIndex === 0 ? '#ffffff80' : '#ffffff'} />
+              </View>
+
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View className="mt-6 mb-8 rounded-xl border border-primary bg-background px-6 py-6 shadow-lg">
@@ -279,8 +369,8 @@ const Analysis: React.FC = () => {
             Weekly Mood Distribution
           </Text>
 
-          <View className="mt-6 items-center">
-            <Svg height={200} width={200}>
+          <View className="mt-4 items-center">
+            <Svg height={130} width={130}>
               {pieArcs.map(segment => (
                 <React.Fragment key={segment.key}>
                   <Path d={segment.path} fill={segment.color} />
@@ -288,7 +378,7 @@ const Analysis: React.FC = () => {
                     x={segment.labelX}
                     y={segment.labelY}
                     fill="#1f2937"
-                    fontSize="12"
+                    fontSize="11"
                     fontWeight="600"
                     textAnchor="middle"
                   >
@@ -312,6 +402,42 @@ const Analysis: React.FC = () => {
                 <Text className="text-sm text-gray-700">{slice.label}</Text>
               </View>
             ))}
+          </View>
+
+          {/* Pagination for Mood Chart */}
+          <View className="flex-row items-center justify-between mt-6">
+            <TouchableOpacity
+              onPress={prevMoodWeek}
+              disabled={moodWeekIndex === 0}
+              className="flex-row items-center gap-1"
+              activeOpacity={0.7}
+            >
+              <View className={`w-8 h-8 rounded-full items-center justify-center ${moodWeekIndex === 0 ? 'bg-primary/10' : 'bg-primary/20'}`}>
+                <ChevronLeft size={18} color={moodWeekIndex === 0 ? '#4093D680' : '#4093D6'} />
+              </View>
+              <Text className={`text-xs ${moodWeekIndex === 0 ? 'text-gray-400' : 'text-primary'}`}>Previous Week</Text>
+            </TouchableOpacity>
+
+            <View className="flex-row gap-2">
+              {allMoodData.map((_, idx) => (
+                <View
+                  key={idx}
+                  className={`h-2 rounded-full ${idx === moodWeekIndex ? "bg-primary w-6" : "bg-primary/40 w-2"}`}
+                />
+              ))}
+            </View>
+
+            <TouchableOpacity
+              onPress={nextMoodWeek}
+              disabled={moodWeekIndex === allMoodData.length - 1}
+              className="flex-row items-center gap-1"
+              activeOpacity={0.7}
+            >
+              <Text className={`text-xs ${moodWeekIndex === allMoodData.length - 1 ? 'text-gray-400' : 'text-primary'}`}>Next Week</Text>
+              <View className={`w-8 h-8 rounded-full items-center justify-center ${moodWeekIndex === allMoodData.length - 1 ? 'bg-primary/10' : 'bg-primary/20'}`}>
+                <ChevronRight size={18} color={moodWeekIndex === allMoodData.length - 1 ? '#4093D680' : '#4093D6'} />
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
       </View>

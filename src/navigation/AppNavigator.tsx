@@ -14,6 +14,7 @@ import MoodJournal from '../screens/MoodJournal';
 import Home from '../screens/Home';
 import NudgeScreen from '../screens/Nudge';
 import AccountRemoved from '../screens/AccRemoved';
+import Notifications from '../screens/Notifications';
 import { NavigatorScreenParams } from '@react-navigation/native';
 
 export type RootStackParamList = {
@@ -30,6 +31,7 @@ export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<BottomTabParamList>;
   Nudge: { riskValue: number };
   AccountRemoved: undefined;
+  Notifications: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -54,6 +56,7 @@ const AppNavigator: React.FC = () => {
       <Stack.Screen name="MoodJournal" component={MoodJournal} />
       <Stack.Screen name="Nudge" component={NudgeScreen} />
       <Stack.Screen name="AccountRemoved" component={AccountRemoved} />
+      <Stack.Screen name="Notifications" component={Notifications} />
       <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
     </Stack.Navigator>
   );

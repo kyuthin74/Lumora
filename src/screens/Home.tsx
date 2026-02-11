@@ -63,7 +63,9 @@ const Home: React.FC = () => {
         style={{ paddingTop: insets.top + 12 }}
       >
         <Image source={require('../assets/Logo_Long.png')} resizeMode="contain" />
-        <Bell className="w-6 h-6" color="#4093d6" />
+        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+          <Bell className="w-6 h-6" color="#4093d6" />
+        </TouchableOpacity>
       </View>
       <ScrollView
         contentContainerClassName="px-5 pb-12 pt-4"
