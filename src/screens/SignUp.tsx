@@ -10,6 +10,7 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import { useNavigation } from "@react-navigation/native";
@@ -201,6 +202,10 @@ const SignUp = () => {
         Alert.alert("Sign up failed", "Missing access token from server response.");
         return;
       }
+
+      // Store credentials in AsyncStorage
+      await AsyncStorage.setItem("userId", userId);
+      await AsyncStorage.setItem("authToken", token);
 
       navigation.navigate("EmergencyContact", { userId, token });
     } catch (error) {
