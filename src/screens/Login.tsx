@@ -20,6 +20,7 @@ const API_BASE_URL =
   Platform.OS === "android"
     ? "http://10.0.2.2:8000"
     : "http://127.0.0.1:8000";
+// const API_BASE_URL = "http://10.0.2.2:8000";
 
 // Check if user has emergency contact (returns true if exists)
 const checkEmergencyContactExists = async (userId: string, token: string): Promise<boolean> => {
@@ -161,6 +162,7 @@ const Login = () => {
         navigation.navigate("EmergencyContact", { userId, token });
       }
     } catch (error) {
+      console.error("Login error:", error);
       const message =
         error instanceof Error
           ? error.message
