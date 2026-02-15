@@ -5,24 +5,30 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import SelectField from '../components/SelectField';
 import ScaleSelector from '../components/ScaleSelector';
 import YesNoToggle from '../components/YesNoToggle';
 import Button from '../components/Button';
 
+const API_BASE_URL =
+  Platform.OS === "android"
+    ? "http://10.0.2.2:8000"
+    : "http://127.0.0.1:8000";
+
 const TestForm: React.FC = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'TestForm'>>();
   const { mood } = route.params;
-  const [energy, setEnergy] = useState(0);
+  const [energy, setEnergy] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
@@ -46,32 +52,38 @@ const TestForm: React.FC = () => {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-
     try {
+        const userId = await AsyncStorage.getItem("userId");
+          const token = await AsyncStorage.getItem("token");
+    console.log("User ID: ", userId)
+
       const formData = {
-        Mood: mood,
-        SleepHour: sleepHours || '',
-        Appetite: appetite || '',
-        Exercise: exerciseHours || '',
-        ScreenTime: screenHours || '',
-        AcademicWork: studyHours || '',
-        Social: socializeAmount || '',
-        Energy: energy,
-        TroubleConcentration: concentration || '',
-        NegativeThought: negativeThoughts ? 'Yes' : 'No',
-        DecisionMaking: clarity || '',
-        BotherStatus: bothered ? 'Yes' : 'No',
-        StressfulEvent: stressfulEvents ? 'Yes' : 'No',
-        SleepyTired: sleepiness || '',
-        FutureHope: hopefulness || '',
+        user_id: userId,
+        mood: mood,
+        sleep_hour: sleepHours || '',
+        appetite: appetite || '',
+        exercise: exerciseHours || '',
+        screen_time: screenHours || '',
+        academic_work: studyHours || '',
+        socialize: socializeAmount || '',
+        energy_level: energy || 0,
+        trouble_concentrating: concentration || '',
+        negative_thoughts: negativeThoughts ? 'Yes' : 'No',
+        decision_making: clarity || '',
+        bothered_things: bothered ? 'Yes' : 'No',
+        stressful_events: stressfulEvents ? 'Yes' : 'No',
+        sleepy_tired: sleepiness || '',
+        future_hope: hopefulness || '',
       };
 
       const response = await fetch(
-        'https://lumora-backend-6utw.onrender.com/predict_depression_risk/',
+        // 'https://lumora-backend-6utw.onrender.com/predict_depression_risk/',
+        `${API_BASE_URL}/depression-test`,
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(formData),
         },
@@ -86,17 +98,16 @@ const TestForm: React.FC = () => {
         console.log('Risk value type:', typeof riskValue);
         navigation.navigate('Nudge', { riskValue });
       } else {
-        Alert.alert(
-          'Error',
-          data.message || 'Failed to submit the form. Please try again.',
-        );
+        console.error('Error submitting form:', data);
+        console.error('Response status:', response.status);
+        console.error('Response full data:', JSON.stringify(data, null, 2));
+        console.log("Type of data.detail:", typeof data.detail);
+        console.log("Is array:", Array.isArray(data.detail));
       }
     } catch (error) {
       console.error('Error submitting form:', error);
-      Alert.alert(
-        'Error',
-        'An error occurred while submitting the form. Please check your connection and try again.',
-      );
+      console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+
     } finally {
       setIsSubmitting(false);
     }
