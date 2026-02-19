@@ -22,11 +22,5 @@ declare module 'react-native' {
   interface KeyboardAvoidingViewProps {
     className?: string;
   }
+  
 }
-
-declare module 'react-native-safe-area-context' {
-  interface SafeAreaViewProps {
-    className?: string;
-  }
-}
-
