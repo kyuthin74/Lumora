@@ -29,7 +29,7 @@ export type RootStackParamList = {
   HighRiskAlert: undefined;
   MoodJournal: undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList>;
-  Nudge: { riskValue: number };
+  Nudge: { riskLevel: string; riskValue: number };
   AccountRemoved: undefined;
   Notifications: undefined;
 };

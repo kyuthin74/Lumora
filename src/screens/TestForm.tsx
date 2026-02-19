@@ -93,10 +93,11 @@ const TestForm: React.FC = () => {
 
       if (response.ok) {
         console.log('Form submitted successfully:', data);
-        const riskValue = data.depression_risk_probability || 0;
-        console.log('Risk value to send:', riskValue);
-        console.log('Risk value type:', typeof riskValue);
-        navigation.navigate('Nudge', { riskValue });
+        const riskLevel = data.risk_level;
+        const riskValue = data.risk_score;
+        console.log('Risk level to send:', riskLevel);
+        console.log('Risk level type:', typeof riskLevel);
+        navigation.navigate('Nudge', { riskLevel, riskValue });
       } else {
         console.error('Error submitting form:', data);
         console.error('Response status:', response.status);
@@ -235,7 +236,7 @@ const TestForm: React.FC = () => {
         How was your energy level today?
       </Text>
       <ScaleSelector
-        value={energy}
+        value={energy!}
         onChange={setEnergy}
         minLabel="Very Low"
         maxLabel="Very High"
