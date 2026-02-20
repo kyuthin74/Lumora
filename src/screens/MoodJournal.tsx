@@ -1,10 +1,15 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Image, TextInput, ScrollView } from "react-native";
+import React, { useMemo, useState } from "react";
+import { View, Text, TouchableOpacity, Image, TextInput, ScrollView, Alert, Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Button from "../components/Button";
 import Icon from "react-native-vector-icons/FontAwesome";
+import { ArrowLeft } from "lucide-react-native";
 import type { RootStackParamList } from "../navigation/AppNavigator";
+
+const API_BASE_URL =
+  Platform.OS === "android" ? "http://10.0.2.2:8000" : "http://127.0.0.1:8000";
 
 const moods = [
   {
@@ -57,6 +62,19 @@ const moods = [
   },
 ];
 
+const activityOptions = [
+  { id: 1, icon: "users", label: "Friends" },
+  { id: 2, icon: "heart", label: "Romance" },
+  { id: 3, icon: "briefcase", label: "Work" },
+  { id: 4, icon: "paint-brush", label: "Creative" },
+  { id: 5, icon: "book", label: "Learning" },
+  { id: 6, icon: "music", label: "Music" },
+  { id: 7, icon: "bed", label: "Rest" },
+  { id: 8, icon: "gamepad", label: "Gaming" },
+  { id: 9, icon: "shopping-cart", label: "Shopping" },
+  { id: 10, icon: "coffee", label: "Cafe" },
+];
+
 type MoodJournalNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "MoodJournal"
@@ -65,23 +83,11 @@ type MoodJournalNavigationProp = NativeStackNavigationProp<
 const MoodJournal = () => {
   const navigation = useNavigation<MoodJournalNavigationProp>();
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // -------------------------------------------------------
   // ACTIVITY SELECTION
   // -------------------------------------------------------
-  const activities = [
-    { id: 1, icon: "users" },
-    { id: 2, icon: "heart" },
-    { id: 3, icon: "briefcase" },
-    { id: 4, icon: "paint-brush" },
-    { id: 5, icon: "book" },
-    { id: 6, icon: "music" },
-    { id: 7, icon: "bed" },
-    { id: 8, icon: "gamepad" },
-    { id: 9, icon: "shopping-cart" },
-    { id: 10, icon: "coffee" },
-  ];
-
   const [selectedActivities, setSelectedActivities] = useState<number[]>([]);
 
   const toggleActivity = (id: number) => {
@@ -95,9 +101,81 @@ const MoodJournal = () => {
   // -------------------------------------------------------
   const [note, setNote] = useState("");
 
+  const moodLabel = useMemo(() => {
+    const match = moods.find((mood) => mood.id === selectedMood);
+    return match?.label ?? null;
+  }, [selectedMood]);
+
+  const selectedActivityLabels = useMemo(() => {
+    return selectedActivities
+      .map((id) => activityOptions.find((activity) => activity.id === id)?.label)
+      .filter((value): value is string => Boolean(value));
+  }, [selectedActivities]);
+
+  const handleSaveMood = async () => {
+    if (!moodLabel) {
+      Alert.alert("Select a mood", "Please choose how you feel before saving.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const userId = await AsyncStorage.getItem("userId");
+      const token = await AsyncStorage.getItem("authToken");
+
+      if (!userId || !token) {
+        Alert.alert("Not signed in", "Log in again to save your mood entry.");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/moods`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          mood_type: moodLabel,
+          activities: selectedActivityLabels,
+          note: note.trim() || null,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const message = data?.message || data?.detail || "Unable to save your mood entry.";
+        throw new Error(message);
+      }
+
+      navigation.navigate('MainTabs', { screen: 'Mood' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Please try again later.";
+      Alert.alert("Save failed", message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainTabs', { screen: 'Mood' });
+    }
+  };
+
   return (
     <ScrollView className="flex-1 bg-background px-6 pt-10" nestedScrollEnabled={true}
       contentContainerStyle={{ paddingBottom: 100 }}>
+      <TouchableOpacity
+        onPress={handleBack}
+        className="flex-row items-center mb-2 pt-6
+        "
+      >
+        <ArrowLeft size={24} color="#4B5563" />
+        <Text className="text-gray-700 text-lg ml-2">Back</Text>
+      </TouchableOpacity>
       {/* Title */}
       <Text className="text-2xl font-bold text-center mb-2">Mood Journaling</Text>
       <Text className="text-gray-600 text-center mb-10">
@@ -146,7 +224,7 @@ const MoodJournal = () => {
       </Text>
 
       <View className="flex-row flex-wrap justify-between mb-6">
-        {activities.map((item) => {
+        {activityOptions.map((item) => {
           const isSelected = selectedActivities.includes(item.id);
 
           return (
@@ -192,7 +270,11 @@ const MoodJournal = () => {
 
       {/* Done Button */}
       <View className="mb-10">
-        <Button title="Done" onPress={() => navigation.goBack()} />
+        <Button
+          title={isSaving ? "Saving..." : "Done"}
+          disabled={!moodLabel || isSaving}
+          onPress={handleSaveMood}
+        />
       </View>
 
     </ScrollView>
