@@ -102,6 +102,23 @@ const TestForm: React.FC = () => {
       if (response.ok) {
         const riskLevel = data.risk_level;
         const riskValue = data.risk_score;
+        // Create notification for depression test result
+        try {
+          await fetch(`${API_BASE_URL}/notifications/`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              type: "result",
+              title: "Depression Test Result",
+              message: data.message || "Your latest assessment shows low risk.",
+            }),
+          });
+        } catch (err) {
+          console.error("Failed to create notification", err);
+        }
         navigation.navigate('Nudge', { riskLevel, riskValue });
       } else {
         console.error('Error submitting form:', data);

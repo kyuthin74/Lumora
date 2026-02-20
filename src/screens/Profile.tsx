@@ -84,7 +84,7 @@ const Profile = () => {
   // Fetch user profile data
   const fetchUserProfile = useCallback(async (userId: string, token: string): Promise<UserProfileResponse | null> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/user/profile/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/user/profile/`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -106,7 +106,7 @@ const Profile = () => {
   // Fetch emergency contact data
   const fetchEmergencyContact = useCallback(async (userId: string, token: string): Promise<EmergencyContactResponse | null> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/emergency-contact/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/emergency-contact/`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -137,7 +137,7 @@ const Profile = () => {
     contactData: { contact_name?: string; contact_email?: string; relationship?: string }
   ): Promise<EmergencyContactResponse | null> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/emergency-contact/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/emergency-contact/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -161,7 +161,7 @@ const Profile = () => {
   // Delete emergency contact
   const deleteEmergencyContact = useCallback(async (userId: string, token: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/emergency-contact/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/emergency-contact/`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -190,7 +190,7 @@ const Profile = () => {
     }
   ): Promise<UserProfileUpdateResponse | null> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/user/profile/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/user/profile/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -214,7 +214,7 @@ const Profile = () => {
   // Delete user account
   const deleteUserAccount = useCallback(async (userId: string, token: string): Promise<void> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/user/profile/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/user/profile/`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

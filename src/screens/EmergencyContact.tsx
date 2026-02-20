@@ -50,7 +50,7 @@ const EmergencyContact: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/emergency-contact/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/emergency-contact/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
