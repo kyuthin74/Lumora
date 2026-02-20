@@ -49,6 +49,40 @@ interface WeeklyRiskData {
 interface MoodApiResponse {
   mood_type?: string;
 }
+// Helper function to format date range
+const formatDateRange = (startDate: string, endDate: string): string => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  const monthNamesShort = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+  
+  const startDay = start.getDate();
+  const endDay = end.getDate();
+  const startMonth = monthNamesShort[start.getMonth()];
+  const endMonth = monthNamesShort[end.getMonth()];
+  const year = end.getFullYear();
+  
+  return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${year}`;
+};
+
+// Helper function to filter out future days from the dataset
+const filterPastDays = (data: RiskPoint[], weekStartDate: string): RiskPoint[] => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const weekStart = new Date(weekStartDate);
+  
+  return data.filter((point, index) => {
+    const pointDate = new Date(weekStart);
+    pointDate.setDate(weekStart.getDate() + index);
+    pointDate.setHours(0, 0, 0, 0);
+    
+    return pointDate <= today;
+  });
+};
 
 const API_BASE_URL =
   Platform.OS === 'android'
@@ -88,29 +122,6 @@ const createMoodSlices = (values: MoodValueMap = {}): MoodSlice[] =>
     value: values[label] ?? 0,
   }));
 
-// Week 1 data for Depression Risk Trend
-const weeklyRiskDataWeek1: RiskPoint[] = [
-  { day: 'Mon', value: 52 },
-  { day: 'Tue', value: 60 },
-  { day: 'Wed', value: 38 },
-  { day: 'Thu', value: 98 },
-  { day: 'Fri', value: 48 },
-  { day: 'Sat', value: 42 },
-  { day: 'Sun', value: 43 },
-];
-
-// Week 2 data for Depression Risk Trend
-const weeklyRiskDataWeek2: RiskPoint[] = [
-  { day: 'Mon', value: 35 },
-  { day: 'Tue', value: 45 },
-  { day: 'Wed', value: 55 },
-  { day: 'Thu', value: 40 },
-  { day: 'Fri', value: 30 },
-  { day: 'Sat', value: 25 },
-  { day: 'Sun', value: 28 },
-];
-
-const allRiskData = [weeklyRiskDataWeek1, weeklyRiskDataWeek2];
 
 const DAYS_IN_WEEK = 7;
 const WEEKS_TO_FETCH = 2;
@@ -263,7 +274,7 @@ const analysisStyles = StyleSheet.create({
 const Analysis: React.FC = () => {
   const [layoutWidth, setLayoutWidth] = useState(0);
   const [riskWeekIndex, setRiskWeekIndex] = useState(0);
-  const [weeklyRiskHistory, setWeeklyRiskHistory] = useState<RiskPoint[][]>([]);
+  const [weeklyRiskHistory, setWeeklyRiskHistory] = useState<WeeklyRiskData[]>([]);
   const [isLoadingRisk, setIsLoadingRisk] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [weeklyMoodHistory, setWeeklyMoodHistory] = useState<WeeklyMoodWeek[]>(
@@ -288,8 +299,7 @@ const Analysis: React.FC = () => {
 
         if (!userId || !token) {
           console.error('No user ID or token found');
-          // Use fallback data if not authenticated
-          setWeeklyRiskHistory(allRiskData);
+          setWeeklyRiskHistory([]);
           setIsLoadingRisk(false);
           return;
         }
@@ -311,21 +321,18 @@ const Analysis: React.FC = () => {
 
         const data = await response.json();
         
-        // Transform API data to match our RiskPoint[][] format
+        // Store full WeeklyRiskData objects
         if (data.weeks && Array.isArray(data.weeks)) {
-          const transformedData = data.weeks.map((week: WeeklyRiskData) => 
-            week.daily_risks
-          );
-          setWeeklyRiskHistory(transformedData.length > 0 ? transformedData : allRiskData);
+          setWeeklyRiskHistory(data.weeks);
         } else {
-          // Use fallback data if API doesn't return expected format
-          setWeeklyRiskHistory(allRiskData);
+          // No data available
+          setWeeklyRiskHistory([]);
         }
       } catch (err) {
         console.error('Error fetching weekly risk data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load data');
-        // Use fallback data on error
-        setWeeklyRiskHistory(allRiskData);
+        // No fallback data
+        setWeeklyRiskHistory([]);
       } finally {
         setIsLoadingRisk(false);
       }
@@ -407,7 +414,6 @@ const Analysis: React.FC = () => {
   }, [isFocused, refreshWeeklyMoodHistory]);
 
   // Get current week's data (use fetched data or fallback)
-  const weeklyRiskData = weeklyRiskHistory[riskWeekIndex] || allRiskData[0];
   const hasRiskHistory = weeklyRiskHistory.length > 0;
   const currentMoodWeek = weeklyMoodHistory[moodWeekIndex];
   const moodDistribution = currentMoodWeek?.slices || createMoodSlices();
@@ -424,6 +430,32 @@ const Analysis: React.FC = () => {
     const filtered = moodDistribution.filter(slice => slice.value > 0);
     return filtered.length ? filtered : moodDistribution;
   }, [moodDistribution]);
+  // Get current week's data
+  const currentWeekData = weeklyRiskHistory[riskWeekIndex];
+  const weeklyRiskData = currentWeekData?.daily_risks || [];
+  
+  // Filter out future days from graph (but keep all for x-axis labels)
+  const pastRiskData = currentWeekData 
+    ? filterPastDays(currentWeekData.daily_risks, currentWeekData.week_start_date)
+    : [];
+  
+  // Format date range for display - calculate current week if no data exists
+  const dateRangeText = currentWeekData 
+    ? formatDateRange(currentWeekData.week_start_date, currentWeekData.week_end_date)
+    : (() => {
+        // Calculate current week's date range
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Get to Monday
+        
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() + mondayOffset);
+        
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        
+        return formatDateRange(weekStart.toISOString().split('T')[0], weekEnd.toISOString().split('T')[0]);
+      })();
 
   // Navigation functions for risk chart
   const nextRiskWeek = () => {
@@ -487,18 +519,20 @@ const Analysis: React.FC = () => {
   );
 
   const polylinePoints = useMemo(() => {
-    if (!chartInnerWidth) {
+    if (!chartInnerWidth || pastRiskData.length === 0) {
       return '';
     }
     const step = chartInnerWidth / (weeklyRiskData.length - 1);
-    return weeklyRiskData
+    return pastRiskData
       .map((point, index) => {
         const x = Y_AXIS_LABEL_WIDTH + step * index;
         const y = valueToY(point.value);
         return `${x},${y}`;
       })
       .join(' ');
-  }, [chartInnerWidth, weeklyRiskData]);
+  }, [chartInnerWidth, pastRiskData, weeklyRiskData.length]);
+  
+  const hasRiskData = pastRiskData.length > 0;
 
   const pieArcs = useMemo(() => {
     const total = moodSlicesForDisplay.reduce((sum, slice) => sum + slice.value, 0);
@@ -560,20 +594,17 @@ const Analysis: React.FC = () => {
         </View>
 
         <View className="mt-8 rounded-3xl bg-primary p-5">
-          <View className="flex-row justify-between items-center">
+          <View className="flex-column justify-between items-center">
             <Text className="text-lg font-semibold text-white">
               Weekly Depression Risk Trend
+            </Text>
+            <Text className="text-sm font-medium text-white">
+              {dateRangeText}
             </Text>
             {isLoadingRisk && (
               <ActivityIndicator size="small" color="#ffffff" />
             )}
           </View>
-
-          {error && (
-            <Text className="text-xs text-white/80 mt-2">
-              Using sample data: {error}
-            </Text>
-          )}
 
           <View className="mt-5 p-2">
             <View
@@ -626,45 +657,57 @@ const Analysis: React.FC = () => {
                         </React.Fragment>
                       );
                     })}
-                    <Polyline
-                      points={polylinePoints}
-                      fill="none"
-                      stroke="#FFFFFF"
-                      strokeWidth={3}
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                    />
-                    {weeklyRiskData.map((point, index) => {
-                      const step =
-                        chartInnerWidth / (weeklyRiskData.length - 1);
-                      const x = Y_AXIS_LABEL_WIDTH + step * index;
-                      const y = valueToY(point.value);
-                      return (
-                        <Circle
-                          key={point.day}
-                          cx={x}
-                          cy={y}
-                          r={5}
-                          fill="#fff"
+                    {hasRiskData && (
+                      <>
+                        <Polyline
+                          points={polylinePoints}
+                          fill="none"
                           stroke="#FFFFFF"
-                          strokeWidth={2}
+                          strokeWidth={3}
+                          strokeLinejoin="round"
+                          strokeLinecap="round"
                         />
-                      );
-                    })}
+                        {pastRiskData.map((point, index) => {
+                          const step =
+                            chartInnerWidth / (weeklyRiskData.length - 1);
+                          const x = Y_AXIS_LABEL_WIDTH + step * index;
+                          const y = valueToY(point.value);
+                          return (
+                            <Circle
+                              key={point.day}
+                              cx={x}
+                              cy={y}
+                              r={5}
+                              fill="#fff"
+                              stroke="#FFFFFF"
+                              strokeWidth={2}
+                            />
+                          );
+                        })}
+                      </>
+                    )}
                   </Svg>
-                  <View
-                    className="flex-row justify-between"
-                    style={[analysisStyles.xAxisRow, xAxisLabelStyle]}
-                  >
-                    {weeklyRiskData.map(point => (
-                      <Text
-                        key={point.day}
-                        className="text-xs font-semibold text-white"
-                      >
-                        {point.day}
+                  {hasRiskData ? (
+                    <View
+                      className="flex-row justify-between"
+                      style={[analysisStyles.xAxisRow, xAxisLabelStyle]}
+                    >
+                      {weeklyRiskData.map(point => (
+                        <Text
+                          key={point.day}
+                          className="text-xs font-semibold text-white"
+                        >
+                          {point.day}
+                        </Text>
+                      ))}
+                    </View>
+                  ) : (
+                    <View className="items-center justify-center py-8">
+                      <Text className="text-sm text-white/70">
+                        No test results available for this week
                       </Text>
-                    ))}
-                  </View>
+                    </View>
+                  )}
                 </>
               )}
             </View>
@@ -685,12 +728,16 @@ const Analysis: React.FC = () => {
             </TouchableOpacity>
 
             <View className="flex-row gap-2">
-              {(hasRiskHistory ? weeklyRiskHistory : allRiskData).map((_, idx) => (
-                <View
-                  key={`${hasRiskHistory ? 'real' : 'fallback'}-${idx}`}
-                  className={`h-2 rounded-full ${idx === riskWeekIndex ? 'bg-white w-6' : 'bg-white/40 w-2'}`}
-                />
-              ))}
+              {hasRiskHistory ? (
+                weeklyRiskHistory.map((_, idx) => (
+                  <View
+                    key={idx}
+                    className={`h-2 rounded-full ${idx === riskWeekIndex ? 'bg-white w-6' : 'bg-white/40 w-2'}`}
+                  />
+                ))
+              ) : (
+                <View className="h-2 rounded-full bg-white/40 w-2" />
+              )}
             </View>
 
             <TouchableOpacity
