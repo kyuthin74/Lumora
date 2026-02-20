@@ -311,7 +311,7 @@ const SignUp = () => {
           <Button
             title={isSubmitting ? "Signing up..." : "Sign up"}
             onPress={handleSignUp}
-            disabled={isSubmitting}
+            disabled={!username || !email || !password || !agree || isSubmitting}
           />
 
           <View className="flex-row justify-center mt-[60px]">

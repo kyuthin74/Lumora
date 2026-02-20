@@ -29,6 +29,7 @@ const EmergencyContact: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, "EmergencyContact">>();
   const userId = route.params?.userId;
   const token = route.params?.token;
+  const fromProfile = route.params?.fromProfile ?? false;
 
   const handleSave = async () => {
     if (!name || !relationship || !email) {
@@ -71,7 +72,11 @@ const EmergencyContact: React.FC = () => {
         throw new Error(message);
       }
 
-      navigation.replace("MainTabs");
+      if (fromProfile) {
+        navigation.goBack();
+      } else {
+        navigation.replace("MainTabs");
+      }
     } catch (error) {
       const message =
         error instanceof Error
@@ -89,11 +94,14 @@ const EmergencyContact: React.FC = () => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView contentContainerClassName="flex-grow px-12 pt-10 pb-16">
-        <View className="flex-row justify-end mt-6 mb-6">
-          <TouchableOpacity onPress={() => navigation.navigate("HighRiskAlert")}>
-            <Text className="text-gray-600 text-xl">Skip</Text>
-          </TouchableOpacity>
-        </View>
+        {!fromProfile && (
+          <View className="flex-row justify-end mt-6 mb-6">
+            <TouchableOpacity onPress={() => navigation.replace("MainTabs")}>
+              <Text className="text-gray-600 text-xl">Skip</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        {fromProfile && <View className="mt-6 mb-6" />}
 
         <Text className="text-center text-md text-gray-700 mb-10">
           Add an emergency contact who can be contacted in case of emotional
@@ -134,13 +142,31 @@ const EmergencyContact: React.FC = () => {
           </View>
         </View>
 
-        <Button
-          disabled={!name || !relationship || !email || isSubmitting}
-          title={isSubmitting ? "Saving..." : "Save"}
-          onPress={handleSave}
-          variant="short"
-          className="mt-6 self-center w-36"
-        />
+        {fromProfile ? (
+          <View className="flex-row justify-center mt-6 space-x-4">
+            <Button
+              title="Cancel"
+              onPress={() => navigation.goBack()}
+              variant="grey"
+              className="w-36 mr-5"
+            />
+            <Button
+              disabled={!name || !relationship || !email || isSubmitting}
+              title={isSubmitting ? "Saving..." : "Save"}
+              onPress={handleSave}
+              variant="short"
+              className="w-36"
+            />
+          </View>
+        ) : (
+          <Button
+            disabled={!name || !relationship || !email || isSubmitting}
+            title={isSubmitting ? "Saving..." : "Save"}
+            onPress={handleSave}
+            variant="short"
+            className="mt-6 self-center w-36"
+          />
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
