@@ -21,6 +21,7 @@ import {
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { BottomTabParamList } from '../navigation/BottomTabNavigator';
 import Button from '../components/Button';
+import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 
 const affirmations = [
   "You are capable of amazing things. Every step forward is progress, no matter how small.",
@@ -37,6 +38,7 @@ const Home: React.FC = () => {
   const riskValue = route.params?.riskValue;
   const riskLevel = route.params?.riskLevel;
   const [affirmationIndex, setAffirmationIndex] = useState(0);
+  const unreadCount = useUnreadNotifications();
 
   useEffect(() => {
     console.log('Home screen - useEffect - riskValue:', riskValue);
@@ -64,8 +66,13 @@ const Home: React.FC = () => {
         style={{ paddingTop: insets.top + 12 }}
       >
         <Image source={require('../assets/Logo_Long.png')} resizeMode="contain" />
-        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
+        <TouchableOpacity onPress={() => navigation.navigate('Notifications')} className="relative">
           <Bell className="w-6 h-6" color="#4093d6" />
+          {unreadCount > 0 && (
+            <View className="absolute -top-1 -right-1 bg-danger rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+              <Text className="text-white text-xs font-bold">{unreadCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
       <ScrollView

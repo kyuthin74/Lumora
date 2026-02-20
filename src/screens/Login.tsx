@@ -23,9 +23,9 @@ const API_BASE_URL =
 // const API_BASE_URL = "http://10.0.2.2:8000";
 
 // Check if user has emergency contact (returns true if exists)
-const checkEmergencyContactExists = async (userId: string, token: string): Promise<boolean> => {
+const checkEmergencyContactExists = async (token: string): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/emergency-contact/${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/emergency-contact/`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -152,7 +152,7 @@ const Login = () => {
       await AsyncStorage.setItem("authToken", token);
 
       // Check if user already has emergency contact
-      const hasEmergencyContact = await checkEmergencyContactExists(userId, token);
+      const hasEmergencyContact = await checkEmergencyContactExists(token);
       
       if (hasEmergencyContact) {
         // Skip emergency contact form, go directly to main app

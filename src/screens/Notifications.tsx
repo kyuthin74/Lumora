@@ -1,11 +1,27 @@
-import React from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import React, { useState, useCallback } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Platform, ActivityIndicator } from "react-native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft } from "lucide-react-native";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { RootStackParamList } from "../navigation/AppNavigator";
+
+const API_BASE_URL =
+  Platform.OS === "android"
+    ? "http://10.0.2.2:8000"
+    : "http://127.0.0.1:8000";
+
+interface NotificationResponse {
+  id: number;
+  user_id: number;
+  type: "result" | "reminder";
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+}
 
 interface NotificationItem {
   id: string;
@@ -17,71 +33,95 @@ interface NotificationItem {
   time: string;
 }
 
-// Mock notification data
-const mockNotifications: NotificationItem[] = [
-  {
-    id: "1",
-    type: "result",
-    icon: "bar-chart",
-    iconColor: "#4093D6",
-    title: "Depression Test Result",
-    message: "Your latest assessment shows low risk. Keep up the great work with your mental wellness!",
-    time: "2 hours ago",
-  },
-  {
-    id: "2",
-    type: "reminder",
-    icon: "bell",
-    iconColor: "#F59E0B",
-    title: "Daily Reminder",
-    message: "Time for your daily mood check-in. How are you feeling today?",
-    time: "5 hours ago",
-  },
-  {
-    id: "3",
-    type: "result",
-    icon: "bar-chart",
-    iconColor: "#4093D6",
-    title: "Depression Test Result",
-    message: "Your weekly assessment is ready. Tap to view your progress report.",
-    time: "1 day ago",
-  },
-  {
-    id: "4",
-    type: "reminder",
-    icon: "bell",
-    iconColor: "#F59E0B",
-    title: "Daily Reminder",
-    message: "Don't forget to log your mood today. Consistency helps track your progress!",
-    time: "1 day ago",
-  },
-  {
-    id: "5",
-    type: "result",
-    icon: "bar-chart",
-    iconColor: "#4093D6",
-    title: "Depression Test Result",
-    message: "Your assessment from last week indicates moderate improvement. Great progress!",
-    time: "3 days ago",
-  },
-  {
-    id: "6",
-    type: "reminder",
-    icon: "bell",
-    iconColor: "#F59E0B",
-    title: "Daily Reminder",
-    message: "Your daily check-in is waiting. Take a moment to reflect on your day.",
-    time: "4 days ago",
-  },
-];
+// Calculate relative time from ISO date string
+const getRelativeTime = (dateString: string): string => {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+  if (diffDays === 1) return "1 day ago";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? "s" : ""} ago`;
+  return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? "s" : ""} ago`;
+};
+
+// Map API response to UI format
+const mapNotification = (notification: NotificationResponse): NotificationItem => {
+  const iconConfig = notification.type === "result"
+    ? { icon: "bar-chart", iconColor: "#4093D6" }
+    : { icon: "bell", iconColor: "#F59E0B" };
+
+  return {
+    id: String(notification.id),
+    type: notification.type,
+    icon: iconConfig.icon,
+    iconColor: iconConfig.iconColor,
+    title: notification.title,
+    message: notification.message,
+    time: getRelativeTime(notification.created_at),
+  };
+};
 
 const Notifications: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch notifications from API
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/notifications/`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch notifications");
+      }
+
+      const data: NotificationResponse[] = await response.json();
+      setNotifications(data.map(mapNotification));
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Reload notifications when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchNotifications();
+    }, [fetchNotifications])
+  );
 
   const handleBack = () => {
     navigation.goBack();
   };
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 bg-background items-center justify-center">
+        <ActivityIndicator size="large" color="#4093D6" />
+        <Text className="mt-4 text-gray-600">Loading notifications...</Text>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-background">
@@ -100,14 +140,14 @@ const Notifications: React.FC = () => {
         contentContainerClassName="px-5 py-4"
         showsVerticalScrollIndicator={false}
       >
-        {mockNotifications.length === 0 ? (
+        {notifications.length === 0 ? (
           <View className="items-center justify-center py-20">
             <FontAwesome name="bell-slash-o" size={48} color="#9CA3AF" />
             <Text className="mt-4 text-gray-500 text-base">No notifications yet</Text>
           </View>
         ) : (
           <View className="gap-3">
-            {mockNotifications.map((notification) => (
+            {notifications.map((notification) => (
               <TouchableOpacity
                 key={notification.id}
                 className="bg-white rounded-xl p-4 border border-gray-200 flex-row"
