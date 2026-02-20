@@ -10,7 +10,7 @@ import Profile from '../screens/Profile';
 export type BottomTabParamList = {
   Home: { riskLevel?: string; riskValue?: number } | undefined;
   Mood: undefined;
-  Analysis: undefined;
+  Analysis: {riskValue?: number} | undefined;
   Chatbot: undefined;
   Profile: undefined;
 };
