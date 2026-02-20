@@ -5,10 +5,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Platform,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Card } from '../components/Card';
 import {
   ChevronLeft,
@@ -23,6 +25,11 @@ import type { BottomTabParamList } from '../navigation/BottomTabNavigator';
 import Button from '../components/Button';
 import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
 
+const API_BASE_URL =
+  Platform.OS === 'android'
+    ? 'http://10.0.2.2:8000'
+    : 'http://127.0.0.1:8000';
+
 const affirmations = [
   "You are capable of amazing things. Every step forward is progress, no matter how small.",
   "You deserve care every day. With rest, movement, nourishment, and compassion, you lay the ground where confidence grows.",
@@ -35,17 +42,109 @@ const Home: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<BottomTabParamList, 'Home'>>();
-  const riskValue = route.params?.riskValue;
-  const riskLevel = route.params?.riskLevel;
   const [affirmationIndex, setAffirmationIndex] = useState(0);
   const unreadCount = useUnreadNotifications();
+  const [riskValue, setRiskValue] = useState<number | undefined>(route.params?.riskValue);
+  const [riskLevel, setRiskLevel] = useState<string | undefined>(route.params?.riskLevel);
+  const [isLoadingRisk, setIsLoadingRisk] = useState(false);
 
+  // Fetch latest risk result from API
   useEffect(() => {
-    console.log('Home screen - useEffect - riskValue:', riskValue);
-    console.log('Home screen - useEffect - route.params:', route.params);
-    console.log('Home screen - useEffect - riskValue * 100:', riskValue ? riskValue * 100 : 'undefined');
-    console.log('Home screen - useEffect - Math.round(riskValue * 100):', riskValue ? Math.round(riskValue * 100) : 'undefined');
-  }, [riskValue, route.params]);
+    const fetchLatestRiskResult = async () => {
+      try {
+        setIsLoadingRisk(true);
+        const userId = await AsyncStorage.getItem('userId');
+        const token = await AsyncStorage.getItem('authToken');
+
+        if (!userId || !token) {
+          console.log('No user ID or token found');
+          // Try to load from AsyncStorage
+          const storedRiskValue = await AsyncStorage.getItem('lastRiskValue');
+          const storedRiskLevel = await AsyncStorage.getItem('lastRiskLevel');
+          
+          if (storedRiskValue !== null) {
+            setRiskValue(parseFloat(storedRiskValue));
+          }
+          if (storedRiskLevel !== null) {
+            setRiskLevel(storedRiskLevel);
+          }
+          setIsLoadingRisk(false);
+          return;
+        }
+
+        const response = await fetch(
+          `${API_BASE_URL}/depression-risk-results/${userId}/latest`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.risk_score !== undefined && data.risk_level !== undefined) {
+            setRiskValue(data.risk_score);
+            setRiskLevel(data.risk_level);
+            
+            // Save to AsyncStorage
+            await AsyncStorage.setItem('lastRiskValue', data.risk_score.toString());
+            await AsyncStorage.setItem('lastRiskLevel', data.risk_level);
+          }
+        } else {
+          // If API call fails, try to load from AsyncStorage
+          const storedRiskValue = await AsyncStorage.getItem('lastRiskValue');
+          const storedRiskLevel = await AsyncStorage.getItem('lastRiskLevel');
+          
+          if (storedRiskValue !== null) {
+            setRiskValue(parseFloat(storedRiskValue));
+          }
+          if (storedRiskLevel !== null) {
+            setRiskLevel(storedRiskLevel);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching latest risk result:', error);
+        // Try to load from AsyncStorage on error
+        try {
+          const storedRiskValue = await AsyncStorage.getItem('lastRiskValue');
+          const storedRiskLevel = await AsyncStorage.getItem('lastRiskLevel');
+          
+          if (storedRiskValue !== null) {
+            setRiskValue(parseFloat(storedRiskValue));
+          }
+          if (storedRiskLevel !== null) {
+            setRiskLevel(storedRiskLevel);
+          }
+        } catch (err) {
+          console.error('Error loading from AsyncStorage:', err);
+        }
+      } finally {
+        setIsLoadingRisk(false);
+      }
+    };
+
+    fetchLatestRiskResult();
+  }, []);
+
+  // Update risk values when received from route params (after completing test)
+  useEffect(() => {
+    const updateRiskFromParams = async () => {
+      if (route.params?.riskValue !== undefined) {
+        setRiskValue(route.params.riskValue);
+        await AsyncStorage.setItem('lastRiskValue', route.params.riskValue.toString());
+      }
+      
+      if (route.params?.riskLevel !== undefined) {
+        setRiskLevel(route.params.riskLevel);
+        await AsyncStorage.setItem('lastRiskLevel', route.params.riskLevel);
+      }
+    };
+
+    updateRiskFromParams();
+  }, [route.params?.riskValue, route.params?.riskLevel]);
 
   const nextAffirmation = () => {
     setAffirmationIndex((prev) => (prev + 1) % affirmations.length);
