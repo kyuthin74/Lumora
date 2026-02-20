@@ -538,8 +538,20 @@ const Analysis: React.FC = () => {
     const total = moodSlicesForDisplay.reduce((sum, slice) => sum + slice.value, 0);
     if (!total) return [];
 
-    let cumulative = 0;
+    // Special case: only one mood
+    if (moodSlicesForDisplay.length === 1) {
+      const slice = moodSlicesForDisplay[0];
+      return [{
+        path: `M ${PIE_CENTER} ${PIE_CENTER} m -${PIE_RADIUS}, 0 a ${PIE_RADIUS},${PIE_RADIUS} 0 1,0 ${PIE_RADIUS * 2},0 a ${PIE_RADIUS},${PIE_RADIUS} 0 1,0 -${PIE_RADIUS * 2},0`,
+        color: slice.color,
+        labelX: PIE_CENTER,
+        labelY: PIE_CENTER,
+        value: slice.value,
+        key: slice.label,
+      }];
+    }
 
+    let cumulative = 0;
     const describeArc = (startAngle: number, endAngle: number) => {
       const start = {
         x: PIE_CENTER + PIE_RADIUS * Math.cos(startAngle),

@@ -166,8 +166,8 @@ const MoodJournal = () => {
   };
 
   return (
-    <ScrollView className="flex-1 bg-background px-6 pt-10" nestedScrollEnabled={true}
-      contentContainerStyle={{ paddingBottom: 100 }}>
+    <ScrollView className="flex-1 bg-background px-6 pt-10" nestedScrollEnabled={false}
+      >
       <TouchableOpacity
         onPress={handleBack}
         className="flex-row items-center mb-2 pt-6
@@ -178,14 +178,14 @@ const MoodJournal = () => {
       </TouchableOpacity>
       {/* Title */}
       <Text className="text-2xl font-bold text-center mb-2">Mood Journaling</Text>
-      <Text className="text-gray-600 text-center mb-10">
+      <Text className="text-gray-600 text-center mb-5">
         Log your daily activities and mood here!
       </Text>
 
       {/* Mood Section */}
       <Text className="text-lg font-semibold text-gray-900 mb-3">What's your mood?</Text>
 
-      <View className="flex-row flex-wrap justify-between mb-6">
+      <View className="flex-row flex-wrap justify-between mb-4">
         {moods.map((mood) => {
           const isSelected = selectedMood === mood.id;
 
@@ -193,7 +193,7 @@ const MoodJournal = () => {
             <TouchableOpacity
               key={mood.id}
               onPress={() => setSelectedMood(mood.id)}
-              className="w-[22%] items-center mb-4"
+              className="w-[22%] items-center mb-2"
             >
               <View
                 className="w-full items-center justify-center rounded-2xl bg-white p-2"
@@ -223,7 +223,7 @@ const MoodJournal = () => {
         What have you been up to?
       </Text>
 
-      <View className="flex-row flex-wrap justify-between mb-6">
+      <View className="flex-row flex-wrap justify-between mb-3">
         {activityOptions.map((item) => {
           const isSelected = selectedActivities.includes(item.id);
 
@@ -257,7 +257,7 @@ const MoodJournal = () => {
 
       {/* Notes Section */}
       <View
-        className="bg-white rounded-2xl p-6 shadow-sm mb-10 border"
+        className="bg-white rounded-2xl p-6 shadow-sm mb-5 border"
         style={{ borderColor: "rgba(46, 139, 192, 0.4)", borderWidth: 1 }}
       >
         <Text className="text-lg font-semibold text-gray-900 mb-3">
