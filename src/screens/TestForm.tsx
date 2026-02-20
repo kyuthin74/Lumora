@@ -54,8 +54,16 @@ const TestForm: React.FC = () => {
     setIsSubmitting(true);
     try {
         const userId = await AsyncStorage.getItem("userId");
-          const token = await AsyncStorage.getItem("token");
-    console.log("User ID: ", userId)
+        const token = await AsyncStorage.getItem("authToken");
+
+        if (!userId || !token) {
+          Alert.alert(
+            'Authentication Error',
+            'Please log in again to continue.',
+            [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+          );
+          return;
+        }
 
       const formData = {
         user_id: userId,
@@ -92,23 +100,37 @@ const TestForm: React.FC = () => {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Form submitted successfully:', data);
         const riskLevel = data.risk_level;
         const riskValue = data.risk_score;
-        console.log('Risk level to send:', riskLevel);
-        console.log('Risk level type:', typeof riskLevel);
         navigation.navigate('Nudge', { riskLevel, riskValue });
       } else {
         console.error('Error submitting form:', data);
         console.error('Response status:', response.status);
         console.error('Response full data:', JSON.stringify(data, null, 2));
-        console.log("Type of data.detail:", typeof data.detail);
-        console.log("Is array:", Array.isArray(data.detail));
+        
+        // Handle authentication errors specifically
+        if (response.status === 401 || response.status === 403) {
+          Alert.alert(
+            'Session Expired',
+            'Your session has expired. Please log in again.',
+            [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+          );
+        } else {
+          Alert.alert(
+            'Submission Error',
+            data.detail || data.message || 'Failed to submit test. Please try again.',
+            [{ text: 'OK' }]
+          );
+        }
       }
     } catch (error) {
       console.error('Error submitting form:', error);
       console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-
+      Alert.alert(
+        'Network Error',
+        'Unable to connect to server. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setIsSubmitting(false);
     }
