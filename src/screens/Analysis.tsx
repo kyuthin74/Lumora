@@ -18,6 +18,7 @@ import Svg, {
 } from 'react-native-svg';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useIsFocused } from '@react-navigation/native';
 
 interface RiskPoint {
   day: string;
@@ -273,6 +274,7 @@ const Analysis: React.FC = () => {
   );
   const [isLoadingOlderMoodWeeks, setIsLoadingOlderMoodWeeks] = useState(false);
   const [hasReachedMoodHistoryStart, setHasReachedMoodHistoryStart] = useState(false);
+  const isFocused = useIsFocused();
 
   // Fetch weekly risk data from API
   useEffect(() => {
@@ -332,6 +334,38 @@ const Analysis: React.FC = () => {
     fetchWeeklyRiskData();
   }, []);
 
+  const refreshWeeklyMoodHistory = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        const fallback = buildEmptyWeeklyMoodHistory(WEEKS_TO_FETCH);
+        setWeeklyMoodHistory(fallback);
+        setMoodWeekIndex(Math.max(fallback.length - 1, 0));
+        setHasReachedMoodHistoryStart(true);
+        return;
+      }
+
+      const weeks = await fetchWeeklyMoodHistory(token);
+
+      if (weeks.length) {
+        setWeeklyMoodHistory(weeks);
+        setMoodWeekIndex(weeks.length - 1);
+        setHasReachedMoodHistoryStart(false);
+      } else {
+        const fallback = buildEmptyWeeklyMoodHistory(WEEKS_TO_FETCH);
+        setWeeklyMoodHistory(fallback);
+        setMoodWeekIndex(Math.max(fallback.length - 1, 0));
+        setHasReachedMoodHistoryStart(true);
+      }
+    } catch (err) {
+      console.error('Error fetching weekly mood distribution:', err);
+      const fallback = buildEmptyWeeklyMoodHistory(WEEKS_TO_FETCH);
+      setWeeklyMoodHistory(fallback);
+      setMoodWeekIndex(Math.max(fallback.length - 1, 0));
+      setHasReachedMoodHistoryStart(true);
+    }
+  }, []);
+
   const loadOlderMoodWeeks = useCallback(async () => {
     if (isLoadingOlderMoodWeeks || !weeklyMoodHistory.length || hasReachedMoodHistoryStart) {
       return;
@@ -366,47 +400,11 @@ const Analysis: React.FC = () => {
   }, [hasReachedMoodHistoryStart, isLoadingOlderMoodWeeks, weeklyMoodHistory]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchMoodHistory = async () => {
-      try {
-        const token = await AsyncStorage.getItem('authToken');
-        if (!token) {
-          setHasReachedMoodHistoryStart(true);
-          return;
-        }
-
-        const weeks = await fetchWeeklyMoodHistory(token);
-
-        if (isMounted) {
-          if (weeks.length) {
-            setWeeklyMoodHistory(weeks);
-            setMoodWeekIndex(weeks.length - 1);
-            setHasReachedMoodHistoryStart(false);
-          } else {
-            const fallback = buildEmptyWeeklyMoodHistory(WEEKS_TO_FETCH);
-            setWeeklyMoodHistory(fallback);
-            setMoodWeekIndex(Math.max(fallback.length - 1, 0));
-            setHasReachedMoodHistoryStart(true);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching weekly mood distribution:', err);
-        if (isMounted) {
-          const fallback = buildEmptyWeeklyMoodHistory(WEEKS_TO_FETCH);
-          setWeeklyMoodHistory(fallback);
-          setMoodWeekIndex(Math.max(fallback.length - 1, 0));
-          setHasReachedMoodHistoryStart(true);
-        }
-      }
-    };
-
-    fetchMoodHistory();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    if (!isFocused) {
+      return;
+    }
+    refreshWeeklyMoodHistory();
+  }, [isFocused, refreshWeeklyMoodHistory]);
 
   // Get current week's data (use fetched data or fallback)
   const weeklyRiskData = weeklyRiskHistory[riskWeekIndex] || allRiskData[0];
