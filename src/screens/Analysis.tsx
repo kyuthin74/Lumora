@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -30,6 +30,13 @@ interface MoodSlice {
   color: string;
 }
 
+interface WeeklyMoodWeek {
+  slices: MoodSlice[];
+  startDateISO: string;
+  endDateISO: string;
+  label: string;
+}
+
 interface WeeklyRiskData {
   week_number: number;
   week_start_date: string;
@@ -38,10 +45,47 @@ interface WeeklyRiskData {
   average_risk: number;
 }
 
+interface MoodApiResponse {
+  mood_type?: string;
+}
+
 const API_BASE_URL =
   Platform.OS === 'android'
     ? 'http://10.0.2.2:8000'
     : 'http://127.0.0.1:8000';
+
+const moodLegend = [
+  { label: 'Neutral', color: '#BFDBFE' },
+  { label: 'Energetic', color: '#FBCFE8' },
+  { label: 'Happy', color: '#BBF7D0' },
+  { label: 'Satisfied', color: '#FEF3C7' },
+  { label: 'Tired', color: '#FED7AA' },
+  { label: 'Stressed', color: '#E9D5FF' },
+  { label: 'Angry', color: '#FECACA' },
+  { label: 'Sad', color: '#E5E7EB' },
+] as const;
+
+type MoodLabel = (typeof moodLegend)[number]['label'];
+type MoodValueMap = Partial<Record<MoodLabel, number>>;
+
+const MOOD_COLORS: Record<MoodLabel, string> = moodLegend.reduce(
+  (acc, mood) => {
+    acc[mood.label] = mood.color;
+    return acc;
+  },
+  {} as Record<MoodLabel, string>,
+);
+
+const MOOD_LABELS = moodLegend.map(mood => mood.label);
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
+
+const createMoodSlices = (values: MoodValueMap = {}): MoodSlice[] =>
+  moodLegend.map(({ label, color }) => ({
+    label,
+    color,
+    value: values[label] ?? 0,
+  }));
 
 // Week 1 data for Depression Risk Trend
 const weeklyRiskDataWeek1: RiskPoint[] = [
@@ -67,29 +111,128 @@ const weeklyRiskDataWeek2: RiskPoint[] = [
 
 const allRiskData = [weeklyRiskDataWeek1, weeklyRiskDataWeek2];
 
-// Week 1 data for Mood Distribution
-const moodDistributionWeek1: MoodSlice[] = [
-  { label: 'Happy', value: 3, color: '#FEC9A7' },
-  { label: 'Stressed', value: 1, color: '#FCA5A5' },
-  { label: 'Satisfied', value: 2, color: '#BBF7D0' },
-  { label: 'Sad', value: 1, color: '#BFDBFE' },
-  { label: 'Neutral', value: 2, color: '#E5E7EB' },
-  { label: 'Tired', value: 1, color: '#D1D5DB' },
-  { label: 'Energetic', value: 1, color: '#FACC15' },
-];
+const DAYS_IN_WEEK = 7;
+const WEEKS_TO_FETCH = 2;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-// Week 2 data for Mood Distribution
-const moodDistributionWeek2: MoodSlice[] = [
-  { label: 'Happy', value: 4, color: '#FEC9A7' },
-  { label: 'Stressed', value: 0, color: '#FCA5A5' },
-  { label: 'Satisfied', value: 3, color: '#BBF7D0' },
-  { label: 'Sad', value: 0, color: '#BFDBFE' },
-  { label: 'Neutral', value: 1, color: '#E5E7EB' },
-  { label: 'Tired', value: 2, color: '#D1D5DB' },
-  { label: 'Energetic', value: 2, color: '#FACC15' },
-];
+const formatISODate = (date: Date) => date.toISOString().split('T')[0];
 
-const allMoodData = [moodDistributionWeek1, moodDistributionWeek2];
+const parseISODate = (iso: string) => {
+  const [year, month, day] = iso.split('-').map(Number);
+  return new Date(year, (month ?? 1) - 1, day ?? 1);
+};
+
+const getWeekEndDate = (weekStart: Date) =>
+  new Date(weekStart.getTime() + (DAYS_IN_WEEK - 1) * DAY_IN_MS);
+
+const formatWeekRangeLabel = (weekStart: Date) => {
+  const weekEnd = getWeekEndDate(weekStart);
+  const formatPart = (date: Date) => `${date.getDate()} ${MONTH_NAMES[date.getMonth()]}`;
+  if (weekStart.getFullYear() === weekEnd.getFullYear()) {
+    return `${formatPart(weekStart)} - ${formatPart(weekEnd)}, ${weekStart.getFullYear()}`;
+  }
+  return `${formatPart(weekStart)} ${weekStart.getFullYear()} - ${formatPart(weekEnd)} ${weekEnd.getFullYear()}`;
+};
+
+const getMondayStart = (date: Date) => {
+  const start = new Date(date);
+  const day = start.getDay();
+  const diff = (day + 6) % 7;
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - diff);
+  return start;
+};
+
+const buildWeekStartDates = (weeksToBuild: number) => {
+  const currentMonday = getMondayStart(new Date());
+  return Array.from({ length: weeksToBuild }, (_, index) => {
+    const weeksAgo = weeksToBuild - index - 1;
+    const weekStart = new Date(currentMonday);
+    weekStart.setDate(weekStart.getDate() - weeksAgo * DAYS_IN_WEEK);
+    return weekStart;
+  });
+};
+
+const buildWeekDateStrings = (weekStart: Date) =>
+  Array.from({ length: DAYS_IN_WEEK }, (_, offset) =>
+    formatISODate(new Date(weekStart.getTime() + offset * DAY_IN_MS)),
+  );
+
+const buildPreviousWeekStartDates = (referenceWeekStart: Date, weeksToBuild: number) => {
+  const monday = getMondayStart(referenceWeekStart);
+  return Array.from({ length: weeksToBuild }, (_, index) => {
+    const weeksBack = weeksToBuild - index;
+    const weekStart = new Date(monday);
+    weekStart.setDate(weekStart.getDate() - weeksBack * DAYS_IN_WEEK);
+    return weekStart;
+  });
+};
+
+const createWeeklyMoodWeek = (weekStart: Date, slices: MoodSlice[]): WeeklyMoodWeek => {
+  const weekEnd = getWeekEndDate(weekStart);
+  return {
+    slices,
+    startDateISO: formatISODate(weekStart),
+    endDateISO: formatISODate(weekEnd),
+    label: formatWeekRangeLabel(weekStart),
+  };
+};
+
+const buildEmptyWeeklyMoodHistory = (weeks: number) =>
+  buildWeekStartDates(weeks).map(weekStart => createWeeklyMoodWeek(weekStart, createMoodSlices()));
+
+const DEFAULT_WEEKLY_MOOD_HISTORY = buildEmptyWeeklyMoodHistory(WEEKS_TO_FETCH);
+
+const isSupportedMoodLabel = (label: string): label is MoodLabel =>
+  Object.prototype.hasOwnProperty.call(MOOD_COLORS, label);
+
+const fetchWeekMoodWeek = async (weekStart: Date, token: string): Promise<WeeklyMoodWeek> => {
+  const weekDates = buildWeekDateStrings(weekStart);
+
+  const dailyEntries = await Promise.all(
+    weekDates.map(async isoDate => {
+      const response = await fetch(
+        `${API_BASE_URL}/moods/daily?selected_date=${encodeURIComponent(isoDate)}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const raw = await response.json().catch(() => []);
+
+      if (!response.ok) {
+        const message =
+          (raw as { message?: string; detail?: string })?.message ||
+          (raw as { message?: string; detail?: string })?.detail ||
+          `Failed to load mood entries for ${isoDate}`;
+        throw new Error(message);
+      }
+
+      return Array.isArray(raw) ? (raw as MoodApiResponse[]) : [];
+    }),
+  );
+
+  const counts: MoodValueMap = {};
+  dailyEntries.flat().forEach(entry => {
+    const moodLabel = entry?.mood_type;
+    if (moodLabel && isSupportedMoodLabel(moodLabel)) {
+      counts[moodLabel] = (counts[moodLabel] ?? 0) + 1;
+    }
+  });
+
+  return createWeeklyMoodWeek(weekStart, createMoodSlices(counts));
+};
+
+const fetchMoodWeeksByStartDates = (startDates: Date[], token: string) =>
+  Promise.all(startDates.map(weekStart => fetchWeekMoodWeek(weekStart, token)));
+
+const fetchWeeklyMoodHistory = async (token: string): Promise<WeeklyMoodWeek[]> => {
+  const weekStartDates = buildWeekStartDates(WEEKS_TO_FETCH);
+  return fetchMoodWeeksByStartDates(weekStartDates, token);
+};
 
 const CHART_HEIGHT = 130;
 const Y_AXIS_LABEL_WIDTH = 30;
@@ -97,6 +240,9 @@ const CHART_HORIZONTAL_PADDING = 10;
 const CHART_VERTICAL_PADDING = 12;
 const TOP_MARGIN = 12;
 const INNER_CHART_HEIGHT = CHART_HEIGHT - TOP_MARGIN;
+const PIE_SIZE = 130;
+const PIE_CENTER = PIE_SIZE / 2;
+const PIE_RADIUS = 52;
 
 const valueToY = (value: number) =>
   TOP_MARGIN + INNER_CHART_HEIGHT - (value / 100) * INNER_CHART_HEIGHT;
@@ -116,10 +262,17 @@ const analysisStyles = StyleSheet.create({
 const Analysis: React.FC = () => {
   const [layoutWidth, setLayoutWidth] = useState(0);
   const [riskWeekIndex, setRiskWeekIndex] = useState(0);
-  const [moodWeekIndex, setMoodWeekIndex] = useState(0);
   const [weeklyRiskHistory, setWeeklyRiskHistory] = useState<RiskPoint[][]>([]);
   const [isLoadingRisk, setIsLoadingRisk] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [weeklyMoodHistory, setWeeklyMoodHistory] = useState<WeeklyMoodWeek[]>(
+    DEFAULT_WEEKLY_MOOD_HISTORY,
+  );
+  const [moodWeekIndex, setMoodWeekIndex] = useState(
+    Math.max(DEFAULT_WEEKLY_MOOD_HISTORY.length - 1, 0),
+  );
+  const [isLoadingOlderMoodWeeks, setIsLoadingOlderMoodWeeks] = useState(false);
+  const [hasReachedMoodHistoryStart, setHasReachedMoodHistoryStart] = useState(false);
 
   // Fetch weekly risk data from API
   useEffect(() => {
@@ -179,24 +332,133 @@ const Analysis: React.FC = () => {
     fetchWeeklyRiskData();
   }, []);
 
+  const loadOlderMoodWeeks = useCallback(async () => {
+    if (isLoadingOlderMoodWeeks || !weeklyMoodHistory.length || hasReachedMoodHistoryStart) {
+      return;
+    }
+
+    setIsLoadingOlderMoodWeeks(true);
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        setHasReachedMoodHistoryStart(true);
+        return;
+      }
+
+      const earliestWeek = weeklyMoodHistory[0];
+      const earliestDate = parseISODate(earliestWeek.startDateISO);
+      const startDates = buildPreviousWeekStartDates(earliestDate, WEEKS_TO_FETCH);
+      const olderWeeks = await fetchMoodWeeksByStartDates(startDates, token);
+
+      if (!olderWeeks.length) {
+        setHasReachedMoodHistoryStart(true);
+        return;
+      }
+
+      setWeeklyMoodHistory(prev => [...olderWeeks, ...prev]);
+      setMoodWeekIndex(olderWeeks.length - 1);
+      setHasReachedMoodHistoryStart(false);
+    } catch (err) {
+      console.error('Error fetching older mood weeks:', err);
+    } finally {
+      setIsLoadingOlderMoodWeeks(false);
+    }
+  }, [hasReachedMoodHistoryStart, isLoadingOlderMoodWeeks, weeklyMoodHistory]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchMoodHistory = async () => {
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        if (!token) {
+          setHasReachedMoodHistoryStart(true);
+          return;
+        }
+
+        const weeks = await fetchWeeklyMoodHistory(token);
+
+        if (isMounted) {
+          if (weeks.length) {
+            setWeeklyMoodHistory(weeks);
+            setMoodWeekIndex(weeks.length - 1);
+            setHasReachedMoodHistoryStart(false);
+          } else {
+            const fallback = buildEmptyWeeklyMoodHistory(WEEKS_TO_FETCH);
+            setWeeklyMoodHistory(fallback);
+            setMoodWeekIndex(Math.max(fallback.length - 1, 0));
+            setHasReachedMoodHistoryStart(true);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching weekly mood distribution:', err);
+        if (isMounted) {
+          const fallback = buildEmptyWeeklyMoodHistory(WEEKS_TO_FETCH);
+          setWeeklyMoodHistory(fallback);
+          setMoodWeekIndex(Math.max(fallback.length - 1, 0));
+          setHasReachedMoodHistoryStart(true);
+        }
+      }
+    };
+
+    fetchMoodHistory();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Get current week's data (use fetched data or fallback)
   const weeklyRiskData = weeklyRiskHistory[riskWeekIndex] || allRiskData[0];
-  const moodDistribution = allMoodData[moodWeekIndex];
+  const hasRiskHistory = weeklyRiskHistory.length > 0;
+  const currentMoodWeek = weeklyMoodHistory[moodWeekIndex];
+  const moodDistribution = currentMoodWeek?.slices || createMoodSlices();
+  const moodWeekLabel = currentMoodWeek?.label;
+  const lastMoodWeekIndex = Math.max(weeklyMoodHistory.length - 1, 0);
+  const isFirstMoodWeek = moodWeekIndex <= 0;
+  const isLastMoodWeek = moodWeekIndex >= lastMoodWeekIndex;
+  const disablePrevMoodWeek = isLoadingOlderMoodWeeks || (isFirstMoodWeek && hasReachedMoodHistoryStart);
+  const hasMoodData = useMemo(
+    () => moodDistribution.some(slice => slice.value > 0),
+    [moodDistribution],
+  );
+  const moodSlicesForDisplay = useMemo(() => {
+    const filtered = moodDistribution.filter(slice => slice.value > 0);
+    return filtered.length ? filtered : moodDistribution;
+  }, [moodDistribution]);
 
   // Navigation functions for risk chart
   const nextRiskWeek = () => {
-    setRiskWeekIndex((prev) => (prev + 1) % weeklyRiskHistory.length);
+    if (!weeklyRiskHistory.length) {
+      return;
+    }
+    setRiskWeekIndex(prev => Math.min(prev + 1, weeklyRiskHistory.length - 1));
   };
   const prevRiskWeek = () => {
-    setRiskWeekIndex((prev) => (prev - 1 + weeklyRiskHistory.length) % weeklyRiskHistory.length);
+    if (!weeklyRiskHistory.length) {
+      return;
+    }
+    setRiskWeekIndex(prev => Math.max(prev - 1, 0));
   };
 
   // Navigation functions for mood chart
   const nextMoodWeek = () => {
-    setMoodWeekIndex((prev) => (prev + 1) % allMoodData.length);
+    setMoodWeekIndex(prev => {
+      if (!weeklyMoodHistory.length) {
+        return prev;
+      }
+      return Math.min(prev + 1, weeklyMoodHistory.length - 1);
+    });
   };
   const prevMoodWeek = () => {
-    setMoodWeekIndex((prev) => (prev - 1 + allMoodData.length) % allMoodData.length);
+    if (!weeklyMoodHistory.length) {
+      return;
+    }
+    if (moodWeekIndex > 0) {
+      setMoodWeekIndex(prev => prev - 1);
+      return;
+    }
+    loadOlderMoodWeeks();
   };
 
   const canvasWidth = useMemo(
@@ -241,36 +503,33 @@ const Analysis: React.FC = () => {
   }, [chartInnerWidth, weeklyRiskData]);
 
   const pieArcs = useMemo(() => {
-    const total = moodDistribution.reduce((sum, slice) => sum + slice.value, 0);
+    const total = moodSlicesForDisplay.reduce((sum, slice) => sum + slice.value, 0);
     if (!total) return [];
 
-    const cx = 65;
-    const cy = 65;
-    const radius = 52;
     let cumulative = 0;
 
     const describeArc = (startAngle: number, endAngle: number) => {
       const start = {
-        x: cx + radius * Math.cos(startAngle),
-        y: cy + radius * Math.sin(startAngle),
+        x: PIE_CENTER + PIE_RADIUS * Math.cos(startAngle),
+        y: PIE_CENTER + PIE_RADIUS * Math.sin(startAngle),
       };
       const end = {
-        x: cx + radius * Math.cos(endAngle),
-        y: cy + radius * Math.sin(endAngle),
+        x: PIE_CENTER + PIE_RADIUS * Math.cos(endAngle),
+        y: PIE_CENTER + PIE_RADIUS * Math.sin(endAngle),
       };
       const largeArcFlag = endAngle - startAngle > Math.PI ? 1 : 0;
-      return `M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`;
+      return `M ${PIE_CENTER} ${PIE_CENTER} L ${start.x} ${start.y} A ${PIE_RADIUS} ${PIE_RADIUS} 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`;
     };
 
-    return moodDistribution.map(slice => {
+    return moodSlicesForDisplay.map(slice => {
       const startAngle = (cumulative / total) * 2 * Math.PI - Math.PI / 2;
       cumulative += slice.value;
       const endAngle = (cumulative / total) * 2 * Math.PI - Math.PI / 2;
 
       const midAngle = (startAngle + endAngle) / 2;
-      const labelRadius = radius * 0.55;
-      const labelX = cx + labelRadius * Math.cos(midAngle);
-      const labelY = cy + labelRadius * Math.sin(midAngle);
+      const labelRadius = PIE_RADIUS * 0.55;
+      const labelX = PIE_CENTER + labelRadius * Math.cos(midAngle);
+      const labelY = PIE_CENTER + labelRadius * Math.sin(midAngle);
 
       return {
         path: describeArc(startAngle, endAngle),
@@ -281,7 +540,7 @@ const Analysis: React.FC = () => {
         key: slice.label,
       };
     });
-  }, [moodDistribution]);
+  }, [moodSlicesForDisplay]);
 
   const handleChartLayout = (event: LayoutChangeEvent) => {
     const width = event.nativeEvent.layout.width;
@@ -417,35 +676,35 @@ const Analysis: React.FC = () => {
           <View className="flex-row items-center justify-between mt-4 px-2">
             <TouchableOpacity
               onPress={prevRiskWeek}
-              disabled={riskWeekIndex === 0}
+              disabled={!hasRiskHistory || riskWeekIndex === 0}
               className="flex-row items-center gap-1"
               activeOpacity={0.7}
             >
-              <View className={`w-8 h-8 rounded-full items-center justify-center ${riskWeekIndex === 0 ? 'bg-white/10' : 'bg-white/20'}`}>
-                <ChevronLeft size={18} color={riskWeekIndex === 0 ? '#ffffff80' : '#ffffff'} />
+              <View className={`w-8 h-8 rounded-full items-center justify-center ${!hasRiskHistory || riskWeekIndex === 0 ? 'bg-white/10' : 'bg-white/20'}`}>
+                <ChevronLeft size={18} color={!hasRiskHistory || riskWeekIndex === 0 ? '#ffffff80' : '#ffffff'} />
               </View>
-              <Text className={`text-xs ${riskWeekIndex === 0 ? 'text-white/50' : 'text-white'}`}>Previous Week</Text>
+              <Text className={`text-xs ${!hasRiskHistory || riskWeekIndex === 0 ? 'text-white/50' : 'text-white'}`}>Previous Week</Text>
             </TouchableOpacity>
 
             <View className="flex-row gap-2">
-              {weeklyRiskHistory.map((_, idx) => (
+              {(hasRiskHistory ? weeklyRiskHistory : allRiskData).map((_, idx) => (
                 <View
-                  key={idx}
-                  className={`h-2 rounded-full ${idx === riskWeekIndex ? "bg-white w-6" : "bg-white/40 w-2"}`}
+                  key={`${hasRiskHistory ? 'real' : 'fallback'}-${idx}`}
+                  className={`h-2 rounded-full ${idx === riskWeekIndex ? 'bg-white w-6' : 'bg-white/40 w-2'}`}
                 />
               ))}
             </View>
 
             <TouchableOpacity
               onPress={nextRiskWeek}
-              disabled={riskWeekIndex === weeklyRiskHistory.length - 1}
+              disabled={!hasRiskHistory || riskWeekIndex === weeklyRiskHistory.length - 1}
               className="flex-row items-center gap-1"
               activeOpacity={0.7}
             >
-              <Text className={`text-xs ${riskWeekIndex === weeklyRiskHistory.length - 1 ? 'text-white/50' : 'text-white'}`}>Next Week</Text>
+              <Text className={`text-xs ${!hasRiskHistory || riskWeekIndex === weeklyRiskHistory.length - 1 ? 'text-white/50' : 'text-white'}`}>Next Week</Text>
               
-                <View className={`w-8 h-8 rounded-full items-center justify-center ${riskWeekIndex === 0 ? 'bg-white/10' : 'bg-white/20'}`}>
-                <ChevronRight size={18} color={riskWeekIndex === 0 ? '#ffffff80' : '#ffffff'} />
+                <View className={`w-8 h-8 rounded-full items-center justify-center ${!hasRiskHistory || riskWeekIndex === weeklyRiskHistory.length - 1 ? 'bg-white/10' : 'bg-white/20'}`}>
+                <ChevronRight size={18} color={!hasRiskHistory || riskWeekIndex === weeklyRiskHistory.length - 1 ? '#ffffff80' : '#ffffff'} />
               </View>
 
             </TouchableOpacity>
@@ -453,35 +712,50 @@ const Analysis: React.FC = () => {
         </View>
 
         <View className="mt-6 mb-8 rounded-xl border border-primary bg-background px-6 py-6 shadow-lg">
-          <Text className="text-lg font-semibold text-gray-900">
+          <Text className="text-lg font-semibold text-gray-900 text-center">
             Weekly Mood Distribution
           </Text>
+          {moodWeekLabel && (
+            <Text className="mt-1 text-sm font-medium text-gray-500 text-center">
+              {moodWeekLabel}
+            </Text>
+          )}
 
-          <View className="mt-4 items-center">
-            <Svg height={130} width={130}>
-              {pieArcs.map(segment => (
-                <React.Fragment key={segment.key}>
-                  <Path d={segment.path} fill={segment.color} />
-                  <SvgText
-                    x={segment.labelX}
-                    y={segment.labelY}
-                    fill="#1f2937"
-                    fontSize="11"
-                    fontWeight="600"
-                    textAnchor="middle"
-                  >
-                    {segment.value}
-                  </SvgText>
-                </React.Fragment>
-              ))}
-            </Svg>
+          <View
+            className="mt-4 items-center"
+            style={{ minHeight: PIE_SIZE, justifyContent: 'center' }}
+          >
+            {hasMoodData ? (
+              <Svg height={PIE_SIZE} width={PIE_SIZE}>
+                {pieArcs.map(segment => (
+                  <React.Fragment key={segment.key}>
+                    <Path d={segment.path} fill={segment.color} />
+                    <SvgText
+                      x={segment.labelX}
+                      y={segment.labelY}
+                      fill="#1f2937"
+                      fontSize="11"
+                      fontWeight="600"
+                      textAnchor="middle"
+                    >
+                      {segment.value}
+                    </SvgText>
+                  </React.Fragment>
+                ))}
+              </Svg>
+            ) : (
+              <Text className="text-base font-medium text-gray-400">
+                No moods logged for this week!
+              </Text>
+            )}
           </View>
 
           <View className="mt-4 flex-row flex-wrap gap-y-3">
-            {moodDistribution.map(slice => (
+            {moodLegend.map(slice => (
               <View
                 key={slice.label}
-                className="mr-6 flex-row items-center gap-2"
+                className="flex-row items-center gap-2"
+                style={{ width: '25%' }}
               >
                 <View
                   style={{ backgroundColor: slice.color }}
@@ -496,18 +770,20 @@ const Analysis: React.FC = () => {
           <View className="flex-row items-center justify-between mt-6">
             <TouchableOpacity
               onPress={prevMoodWeek}
-              disabled={moodWeekIndex === 0}
+              disabled={disablePrevMoodWeek}
               className="flex-row items-center gap-1"
               activeOpacity={0.7}
             >
-              <View className={`w-8 h-8 rounded-full items-center justify-center ${moodWeekIndex === 0 ? 'bg-primary/10' : 'bg-primary/20'}`}>
-                <ChevronLeft size={18} color={moodWeekIndex === 0 ? '#4093D680' : '#4093D6'} />
+              <View className={`w-8 h-8 rounded-full items-center justify-center ${disablePrevMoodWeek ? 'bg-primary/10' : 'bg-primary/20'}`}>
+                <ChevronLeft size={18} color={disablePrevMoodWeek ? '#4093D680' : '#4093D6'} />
               </View>
-              <Text className={`text-xs ${moodWeekIndex === 0 ? 'text-gray-400' : 'text-primary'}`}>Previous Week</Text>
+              <Text className={`text-xs ${disablePrevMoodWeek ? 'text-gray-400' : 'text-primary'}`}>
+                {isLoadingOlderMoodWeeks ? 'Loading…' : 'Previous Week'}
+              </Text>
             </TouchableOpacity>
 
             <View className="flex-row gap-2">
-              {allMoodData.map((_, idx) => (
+              {weeklyMoodHistory.map((_, idx) => (
                 <View
                   key={idx}
                   className={`h-2 rounded-full ${idx === moodWeekIndex ? "bg-primary w-6" : "bg-primary/40 w-2"}`}
@@ -517,13 +793,13 @@ const Analysis: React.FC = () => {
 
             <TouchableOpacity
               onPress={nextMoodWeek}
-              disabled={moodWeekIndex === allMoodData.length - 1}
+              disabled={isLastMoodWeek}
               className="flex-row items-center gap-1"
               activeOpacity={0.7}
             >
-              <Text className={`text-xs ${moodWeekIndex === allMoodData.length - 1 ? 'text-gray-400' : 'text-primary'}`}>Next Week</Text>
-              <View className={`w-8 h-8 rounded-full items-center justify-center ${moodWeekIndex === allMoodData.length - 1 ? 'bg-primary/10' : 'bg-primary/20'}`}>
-                <ChevronRight size={18} color={moodWeekIndex === allMoodData.length - 1 ? '#4093D680' : '#4093D6'} />
+              <Text className={`text-xs ${isLastMoodWeek ? 'text-gray-400' : 'text-primary'}`}>Next Week</Text>
+              <View className={`w-8 h-8 rounded-full items-center justify-center ${isLastMoodWeek ? 'bg-primary/10' : 'bg-primary/20'}`}>
+                <ChevronRight size={18} color={isLastMoodWeek ? '#4093D680' : '#4093D6'} />
               </View>
             </TouchableOpacity>
           </View>

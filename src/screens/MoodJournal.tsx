@@ -244,6 +244,12 @@ const MoodJournal = () => {
                   color={isSelected ? "#2E8BC0" : "#555"}
                 />
               </View>
+              <Text
+                className="mt-2 text-xs font-medium text-center"
+                style={{ color: isSelected ? "#2E8BC0" : "#6B7280" }}
+              >
+                {item.label}
+              </Text>
             </TouchableOpacity>
           );
         })}
