@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   LayoutChangeEvent,
   StyleSheet,
   TouchableOpacity,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import Svg, {
   Line,
@@ -15,6 +17,7 @@ import Svg, {
   Path,
 } from 'react-native-svg';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface RiskPoint {
   day: string;
@@ -26,6 +29,19 @@ interface MoodSlice {
   value: number;
   color: string;
 }
+
+interface WeeklyRiskData {
+  week_number: number;
+  week_start_date: string;
+  week_end_date: string;
+  daily_risks: RiskPoint[];
+  average_risk: number;
+}
+
+const API_BASE_URL =
+  Platform.OS === 'android'
+    ? 'http://10.0.2.2:8000'
+    : 'http://127.0.0.1:8000';
 
 // Week 1 data for Depression Risk Trend
 const weeklyRiskDataWeek1: RiskPoint[] = [
@@ -101,17 +117,78 @@ const Analysis: React.FC = () => {
   const [layoutWidth, setLayoutWidth] = useState(0);
   const [riskWeekIndex, setRiskWeekIndex] = useState(0);
   const [moodWeekIndex, setMoodWeekIndex] = useState(0);
+  const [weeklyRiskHistory, setWeeklyRiskHistory] = useState<RiskPoint[][]>([]);
+  const [isLoadingRisk, setIsLoadingRisk] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Get current week's data
-  const weeklyRiskData = allRiskData[riskWeekIndex];
+  // Fetch weekly risk data from API
+  useEffect(() => {
+    const fetchWeeklyRiskData = async () => {
+      try {
+        setIsLoadingRisk(true);
+        setError(null);
+        
+        const userId = await AsyncStorage.getItem('userId');
+        const token = await AsyncStorage.getItem('authToken');
+
+        if (!userId || !token) {
+          console.error('No user ID or token found');
+          // Use fallback data if not authenticated
+          setWeeklyRiskHistory(allRiskData);
+          setIsLoadingRisk(false);
+          return;
+        }
+
+        const response = await fetch(
+          `${API_BASE_URL}/depression-risk-results/${userId}/weekly`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch risk data: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Transform API data to match our RiskPoint[][] format
+        if (data.weeks && Array.isArray(data.weeks)) {
+          const transformedData = data.weeks.map((week: WeeklyRiskData) => 
+            week.daily_risks
+          );
+          setWeeklyRiskHistory(transformedData.length > 0 ? transformedData : allRiskData);
+        } else {
+          // Use fallback data if API doesn't return expected format
+          setWeeklyRiskHistory(allRiskData);
+        }
+      } catch (err) {
+        console.error('Error fetching weekly risk data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+        // Use fallback data on error
+        setWeeklyRiskHistory(allRiskData);
+      } finally {
+        setIsLoadingRisk(false);
+      }
+    };
+
+    fetchWeeklyRiskData();
+  }, []);
+
+  // Get current week's data (use fetched data or fallback)
+  const weeklyRiskData = weeklyRiskHistory[riskWeekIndex] || allRiskData[0];
   const moodDistribution = allMoodData[moodWeekIndex];
 
   // Navigation functions for risk chart
   const nextRiskWeek = () => {
-    setRiskWeekIndex((prev) => (prev + 1) % allRiskData.length);
+    setRiskWeekIndex((prev) => (prev + 1) % weeklyRiskHistory.length);
   };
   const prevRiskWeek = () => {
-    setRiskWeekIndex((prev) => (prev - 1 + allRiskData.length) % allRiskData.length);
+    setRiskWeekIndex((prev) => (prev - 1 + weeklyRiskHistory.length) % weeklyRiskHistory.length);
   };
 
   // Navigation functions for mood chart
@@ -226,9 +303,20 @@ const Analysis: React.FC = () => {
         </View>
 
         <View className="mt-8 rounded-3xl bg-primary p-5">
-          <Text className="text-lg font-semibold text-white">
-            Weekly Depression Risk Trend
-          </Text>
+          <View className="flex-row justify-between items-center">
+            <Text className="text-lg font-semibold text-white">
+              Weekly Depression Risk Trend
+            </Text>
+            {isLoadingRisk && (
+              <ActivityIndicator size="small" color="#ffffff" />
+            )}
+          </View>
+
+          {error && (
+            <Text className="text-xs text-white/80 mt-2">
+              Using sample data: {error}
+            </Text>
+          )}
 
           <View className="mt-5 p-2">
             <View
@@ -340,7 +428,7 @@ const Analysis: React.FC = () => {
             </TouchableOpacity>
 
             <View className="flex-row gap-2">
-              {allRiskData.map((_, idx) => (
+              {weeklyRiskHistory.map((_, idx) => (
                 <View
                   key={idx}
                   className={`h-2 rounded-full ${idx === riskWeekIndex ? "bg-white w-6" : "bg-white/40 w-2"}`}
@@ -350,11 +438,11 @@ const Analysis: React.FC = () => {
 
             <TouchableOpacity
               onPress={nextRiskWeek}
-              disabled={riskWeekIndex === allRiskData.length - 1}
+              disabled={riskWeekIndex === weeklyRiskHistory.length - 1}
               className="flex-row items-center gap-1"
               activeOpacity={0.7}
             >
-              <Text className={`text-xs ${riskWeekIndex === allRiskData.length - 1 ? 'text-white/50' : 'text-white'}`}>Next Week</Text>
+              <Text className={`text-xs ${riskWeekIndex === weeklyRiskHistory.length - 1 ? 'text-white/50' : 'text-white'}`}>Next Week</Text>
               
                 <View className={`w-8 h-8 rounded-full items-center justify-center ${riskWeekIndex === 0 ? 'bg-white/10' : 'bg-white/20'}`}>
                 <ChevronRight size={18} color={riskWeekIndex === 0 ? '#ffffff80' : '#ffffff'} />

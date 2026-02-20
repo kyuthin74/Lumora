@@ -35,6 +35,7 @@ const Home: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<BottomTabParamList, 'Home'>>();
   const riskValue = route.params?.riskValue;
+  const riskLevel = route.params?.riskLevel;
   const [affirmationIndex, setAffirmationIndex] = useState(0);
 
   useEffect(() => {
@@ -161,16 +162,16 @@ const Home: React.FC = () => {
                   )}
                 </Text>
               </View>
-              {riskValue !== undefined && (
+              {riskLevel !== undefined && (
                 <View className="flex-row gap-3 items-center">
                   <Text className="text-md">Depression Risk</Text>
                   <View className={`px-4 py-1 rounded-xl ${
-                    riskValue <= 0.3 ? 'bg-green-600' :
-                    riskValue <= 0.65 ? 'bg-yellow-600' :
+                    riskLevel === 'Low' ? 'bg-green-600' :
+                    riskLevel === 'Moderate' ? 'bg-yellow-600' :
                     'bg-danger'
                   }`}>
                     <Text className="text-white font-semibold text-md">
-                      {riskValue <= 0.3 ? ' Low ' : riskValue <= 0.65 ? ' Medium ' : ' High '}
+                      {riskLevel}
                     </Text>
                   </View>
                 </View>
