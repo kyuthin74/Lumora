@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Platform, Alert, ActivityIndicator } from "react-native";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { NavigationProp, useNavigation, useFocusEffect } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
@@ -76,6 +76,10 @@ const Profile = () => {
     email: "",
   });
   const [activeEditModal, setActiveEditModal] = useState<null | "profile" | "contact">(null);
+  const [deleteContactModalVisible, setDeleteContactModalVisible] = useState(false);
+
+  // Check if emergency contact exists
+  const hasEmergencyContact = emergencyContact.name.trim() !== "" || emergencyContact.email.trim() !== "";
 
   // Fetch user profile data
   const fetchUserProfile = useCallback(async (userId: string, token: string): Promise<UserProfileResponse | null> => {
@@ -108,6 +112,11 @@ const Profile = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+
+      // 404 means no emergency contact exists - this is not an error
+      if (response.status === 404) {
+        return null;
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -145,6 +154,26 @@ const Profile = () => {
       return await response.json();
     } catch (error) {
       console.error("Error updating emergency contact:", error);
+      throw error;
+    }
+  }, []);
+
+  // Delete emergency contact
+  const deleteEmergencyContact = useCallback(async (userId: string, token: string): Promise<void> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/emergency-contact/${userId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok && response.status !== 204) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.detail || "Failed to delete emergency contact");
+      }
+    } catch (error) {
+      console.error("Error deleting emergency contact:", error);
       throw error;
     }
   }, []);
@@ -206,10 +235,11 @@ const Profile = () => {
     }
   }, []);
 
-  // Load profile data on mount
-  useEffect(() => {
-    const loadProfileData = async () => {
-      setIsLoading(true);
+  // Load profile data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const loadProfileData = async () => {
+        setIsLoading(true);
 
       const { userId, token } = await getUserCredentials();
 
@@ -262,7 +292,8 @@ const Profile = () => {
     };
 
     loadProfileData();
-  }, [fetchUserProfile, fetchEmergencyContact]);
+  }, [fetchUserProfile, fetchEmergencyContact])
+  );
 
   const handleLogoutPress = () => setLogoutModalVisible(true);
   const handleLogoutCancel = () => setLogoutModalVisible(false);
@@ -273,6 +304,30 @@ const Profile = () => {
 
   const handleDeletePress = () => setDeleteModalVisible(true);
   const handleDeleteCancel = () => setDeleteModalVisible(false);
+
+  // Emergency contact delete handlers
+  const handleDeleteContactPress = () => setDeleteContactModalVisible(true);
+  const handleDeleteContactCancel = () => setDeleteContactModalVisible(false);
+  const handleDeleteContactConfirm = async () => {
+    const { userId, token } = await getUserCredentials();
+    
+    if (!userId || !token) {
+      Alert.alert("Error", "Please log in to delete emergency contact.");
+      setDeleteContactModalVisible(false);
+      return;
+    }
+
+    try {
+      await deleteEmergencyContact(userId, token);
+      setEmergencyContact({ name: "", relationship: "", email: "" });
+      setDeleteContactModalVisible(false);
+    } catch (error) {
+      setDeleteContactModalVisible(false);
+      const message = error instanceof Error ? error.message : "Failed to delete emergency contact";
+      Alert.alert("Delete failed", message);
+    }
+  };
+
   const handleDeleteConfirm = async () => {
     const { userId, token } = await getUserCredentials();
     
@@ -450,24 +505,51 @@ const Profile = () => {
       </View>
 
       {/* --- EMERGENCY CONTACT CARD --- */}
-      <View className="bg-white rounded-2xl p-5 border border-primary-200 mb-6">
-        <View className="flex-row items-center mb-1">
-          <FontAwesome name="warning" size={18} color="#000" />
-          <Text className="text-lg font-semibold text-gray-900 ml-2">
-            Emergency Contact
-          </Text>
-        </View>
+      {hasEmergencyContact ? (
+        <View className="bg-white rounded-2xl p-5 border border-primary-200 mb-6">
+          <View className="flex-row items-center mb-1">
+            <FontAwesome name="warning" size={18} color="#000" />
+            <Text className="text-lg font-semibold text-gray-900 ml-2">
+              Emergency Contact
+            </Text>
+          </View>
 
-        <TouchableOpacity className="absolute top-4 right-4" onPress={() => setActiveEditModal("contact")}>
-          <FontAwesome name="edit" size={22} color="#4093D6" />
-        </TouchableOpacity>
+          {/* Delete and Edit icons */}
+          <View className="absolute top-4 right-4 flex-row">
+            <TouchableOpacity onPress={handleDeleteContactPress} className="mr-4">
+              <FontAwesome name="trash" size={22} color="#DC2626" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setActiveEditModal("contact")}>
+              <FontAwesome name="edit" size={22} color="#4093D6" />
+            </TouchableOpacity>
+          </View>
 
-        <View className="mt-3">
-          <ProfileInput label="Name" value={emergencyContact.name} />
-          <ProfileInput label="Relationship" value={emergencyContact.relationship} />
-          <ProfileInput label="Email" value={emergencyContact.email} />
+          <View className="mt-3">
+            <ProfileInput label="Name" value={emergencyContact.name} />
+            <ProfileInput label="Relationship" value={emergencyContact.relationship} />
+            <ProfileInput label="Email" value={emergencyContact.email} />
+          </View>
         </View>
-      </View>
+      ) : (
+        <View className="bg-white rounded-2xl p-5 border border-primary-200 mb-6">
+          <View className="flex-row items-center mb-3">
+            <FontAwesome name="warning" size={18} color="#000" />
+            <Text className="text-lg font-semibold text-gray-900 ml-2">
+              Emergency Contact
+            </Text>
+          </View>
+          <Text className="text-gray-600 mb-4">No emergency contact added yet.</Text>
+          <TouchableOpacity
+            className="bg-primary rounded-lg py-3 items-center"
+            onPress={async () => {
+              const { userId, token } = await getUserCredentials();
+              rootNavigation?.navigate("EmergencyContact", { userId: userId ?? undefined, token: token ?? undefined, fromProfile: true });
+            }}
+          >
+            <Text className="text-white font-semibold">Add Emergency Contact</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* --- NOTIFICATION SETTINGS CARD --- */}
       <View className="bg-white rounded-2xl p-5 border border-primary-200 mb-6">
@@ -586,6 +668,14 @@ const Profile = () => {
         subMessage="Deleting your account will remove all of your information from our database. This cannot be undone."
         onCancel={handleDeleteCancel}
         onConfirm={handleDeleteConfirm}
+      />
+
+      <ConfirmModal
+        visible={deleteContactModalVisible}
+        title="Delete Emergency Contact"
+        message="Are you sure you want to delete this emergency contact?"
+        onCancel={handleDeleteContactCancel}
+        onConfirm={handleDeleteContactConfirm}
       />
 
       <EditProfile

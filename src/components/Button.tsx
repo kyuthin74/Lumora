@@ -5,7 +5,7 @@ type ButtonProps = {
   title: string;
   onPress?: (event: GestureResponderEvent) => void;
   disabled?: boolean;
-  variant?: "primary" | "secondary" | "link" | "short";
+  variant?: "primary" | "secondary" | "link" | "short" | "grey";
   className?: string;
 };
 
@@ -21,6 +21,7 @@ const Button: React.FC<ButtonProps> = ({
     primary: `${disabled ? "bg-primary/50" : "bg-primary"} w-full`,
     secondary: `${disabled ? "bg-gray-200" : "bg-white border border-primary"} w-full`,
     short: `${disabled ? "bg-primary/50" : "bg-primary"} w-auto px-6`,
+    grey: `${disabled ? "bg-gray-300" : "bg-gray-400"} w-auto px-6`,
     link: "bg-transparent",
   };
 
@@ -30,6 +31,9 @@ const Button: React.FC<ButtonProps> = ({
     }
     if (variant === "link") {
       return disabled ? "text-primary/60" : "text-primary";
+    }
+    if (variant === "grey") {
+      return "text-white";
     }
     return "text-white";
   })();

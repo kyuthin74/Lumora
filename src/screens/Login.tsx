@@ -243,7 +243,7 @@ const Login = () => {
           <Button
             title={isSubmitting ? "Logging in..." : "Log in"}
             onPress={handleLogin}
-            disabled={isSubmitting}
+            disabled={!email || !password || isSubmitting}
           />
 
           <View className="flex-row justify-center mt-[60px]">
