@@ -73,6 +73,8 @@ const Notifications: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Fetch notifications from API
   const fetchNotifications = useCallback(async () => {
@@ -103,15 +105,59 @@ const Notifications: React.FC = () => {
     }
   }, []);
 
-  // Reload notifications when screen comes into focus
+  // Mark all notifications as read
+  const markAllAsRead = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      if (!token) return;
+      await fetch(`${API_BASE_URL}/notifications/read-all`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to mark notifications as read", err);
+    }
+  }, []);
+
+  // Reload notifications and mark as read when screen comes into focus
   useFocusEffect(
     useCallback(() => {
+      markAllAsRead();
       fetchNotifications();
-    }, [fetchNotifications])
+    }, [markAllAsRead, fetchNotifications])
   );
 
   const handleBack = () => {
     navigation.goBack();
+  };
+
+  const handleDeleteNotification = async (notificationId: string) => {
+    setDeletingId(notificationId);
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      if (!token) return;
+      const response = await fetch(`${API_BASE_URL}/notifications/${notificationId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        setDeleteSuccess(true);
+        setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+        setTimeout(() => {
+          setDeleteSuccess(false);
+          setDeletingId(null);
+        }, 2000);
+      } else {
+        // Optionally handle error
+        setDeletingId(null);
+      }
+    } catch {
+      setDeletingId(null);
+    }
   };
 
   if (isLoading) {
@@ -135,6 +181,15 @@ const Notifications: React.FC = () => {
         </TouchableOpacity>
         <Text className="text-xl font-bold text-gray-900">Notifications</Text>
       </View>
+
+      {/* Success popup */}
+      {deleteSuccess && (
+        <View className="absolute top-4 left-0 right-0 items-center z-50">
+          <View className="bg-black/80 px-4 py-2 rounded-xl">
+            <Text className="text-white text-sm">Notification deleted</Text>
+          </View>
+        </View>
+      )}
 
       <ScrollView
         contentContainerClassName="px-5 py-4"
@@ -171,6 +226,9 @@ const Notifications: React.FC = () => {
                     <Text className="text-base font-semibold text-gray-900">
                       {notification.title}
                     </Text>
+                    <TouchableOpacity onPress={() => handleDeleteNotification(notification.id)}>
+                      <FontAwesome name="trash" size={20} color="#DC2626" style={{ marginLeft: 8 }} />
+                    </TouchableOpacity>
                   </View>
                   <Text className="text-gray-600 text-sm leading-5 mb-2">
                     {notification.message}
