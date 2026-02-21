@@ -32,6 +32,9 @@ export type RootStackParamList = {
   Nudge: { riskLevel: string; riskValue: number };
   AccountRemoved: undefined;
   Notifications: undefined;
+  ForgotPassword: undefined;
+  VerifyCode: { email: string };
+  ResetPassword: { email: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -57,6 +60,9 @@ const AppNavigator: React.FC = () => {
       <Stack.Screen name="Nudge" component={NudgeScreen} />
       <Stack.Screen name="AccountRemoved" component={AccountRemoved} />
       <Stack.Screen name="Notifications" component={Notifications} />
+      <Stack.Screen name="ForgotPassword" component={require('../screens/ForgotPassword').default} />
+      <Stack.Screen name="VerifyCode" component={require('../screens/VerifyCode').default} />
+      <Stack.Screen name="ResetPassword" component={require('../screens/ResetPassword').default} />
       <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
     </Stack.Navigator>
   );

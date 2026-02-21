@@ -236,7 +236,10 @@ const Login = () => {
             <View className="mb-2" />
           )}
 
-          <TouchableOpacity className="items-end mb-8">
+          <TouchableOpacity
+            className="items-end mb-8"
+            onPress={() => navigation.navigate("ForgotPassword")}
+          >
             <Text className="text-primary font-arimo">Forgot password?</Text>
           </TouchableOpacity>
 
