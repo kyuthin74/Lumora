@@ -273,7 +273,7 @@ const Home: React.FC = () => {
                   <Text className="text-md">Depression Risk</Text>
                   <View className={`px-4 py-1 rounded-xl ${
                     riskLevel === 'Low' ? 'bg-green-600' :
-                    riskLevel === 'Moderate' ? 'bg-yellow-600' :
+                    riskLevel === 'Medium' ? 'bg-yellow-600' :
                     'bg-danger'
                   }`}>
                     <Text className="text-white font-semibold text-md">
