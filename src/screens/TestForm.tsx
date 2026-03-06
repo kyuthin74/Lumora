@@ -23,6 +23,87 @@ const API_BASE_URL =
     ? "http://10.0.2.2:8000"
     : "http://127.0.0.1:8000";
 
+interface DailyRiskResult {
+  date: string;
+  risk_level: string;
+  risk_score: number;
+}
+
+// Helper function to check if user has 7 consecutive days of high risk
+const checkSevenDayHighRiskStreak = async (
+  userId: string,
+  token: string,
+): Promise<boolean> => {
+  try {
+    // Fetch daily risk results for the last 7 days
+    const response = await fetch(
+      `${API_BASE_URL}/depression-risk-results/${userId}/daily?days=7`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Failed to fetch daily risk results');
+      return false;
+    }
+
+    const data = await response.json();
+    const dailyResults: DailyRiskResult[] = data.results || [];
+
+    // Check if we have results for all 7 days
+    if (dailyResults.length < 7) {
+      return false;
+    }
+
+    // Check if all 7 days are "High" risk
+    const allHighRisk = dailyResults.every(
+      (result) => result.risk_level === 'High'
+    );
+
+    return allHighRisk;
+  } catch (error) {
+    console.error('Error checking 7-day high risk streak:', error);
+    return false;
+  }
+};
+
+// Function to send emergency alert email
+const sendEmergencyAlert = async (
+  userId: string,
+  token: string,
+): Promise<void> => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/emergency-alert/send`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          alert_type: 'seven_day_high_risk',
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Failed to send emergency alert:', errorData);
+    } else {
+      console.log('Emergency alert sent successfully');
+    }
+  } catch (error) {
+    console.error('Error sending emergency alert:', error);
+  }
+};
+
 const TestForm: React.FC = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -119,6 +200,19 @@ const TestForm: React.FC = () => {
         } catch (err) {
           console.error("Failed to create notification", err);
         }
+        
+        // Check for 7 consecutive days of high risk and send alert if needed
+        try {
+          const hasSevenDayStreak = await checkSevenDayHighRiskStreak(userId, token);
+          
+          if (hasSevenDayStreak) {
+            console.log('Detected 7 consecutive days of high risk - sending emergency alert');
+            await sendEmergencyAlert(userId, token);
+          }
+        } catch (err) {
+          console.error('Error checking/sending emergency alert:', err);
+        }
+        
         navigation.navigate('Nudge', { riskLevel, riskValue });
       } else {
         console.error('Error submitting form:', data);
@@ -233,7 +327,7 @@ const TestForm: React.FC = () => {
           '7 or more hours',
         ]}
         onSelect={setScreenHours}
-        dropdownOffset={100}
+        dropdownOffset={105}
         isOpen={openDropdown === 'screenHours'}
         onToggle={() =>
           setOpenDropdown(openDropdown === 'screenHours' ? null : 'screenHours')
@@ -250,7 +344,7 @@ const TestForm: React.FC = () => {
           '8 or more hours',
         ]}
         onSelect={setStudyHours}
-        dropdownOffset={100}
+        dropdownOffset={80}
         isOpen={openDropdown === 'studyHours'}
         onToggle={() =>
           setOpenDropdown(openDropdown === 'studyHours' ? null : 'studyHours')
@@ -313,7 +407,7 @@ const TestForm: React.FC = () => {
         value={clarity}
         options={['Clear', 'Normal', 'A little foggy', 'Foggy']}
         onSelect={setClarity}
-        dropdownOffset={100}
+        dropdownOffset={80}
         isOpen={openDropdown === 'clarity'}
         onToggle={() =>
           setOpenDropdown(openDropdown === 'clarity' ? null : 'clarity')

@@ -297,8 +297,20 @@ const Profile = () => {
 
   const handleLogoutPress = () => setLogoutModalVisible(true);
   const handleLogoutCancel = () => setLogoutModalVisible(false);
-  const handleLogoutConfirm = () => {
+  const handleLogoutConfirm = async () => {
     setLogoutModalVisible(false);
+    
+    // Clear all cached data on logout
+    try {
+      await AsyncStorage.removeItem('userId');
+      await AsyncStorage.removeItem('authToken');
+      await AsyncStorage.removeItem('lastRiskValue');
+      await AsyncStorage.removeItem('lastRiskLevel');
+      await AsyncStorage.removeItem('riskDataUserId');
+    } catch (err) {
+      console.error('Error clearing AsyncStorage on logout:', err);
+    }
+    
     rootNavigation?.navigate("Login");
   };
 

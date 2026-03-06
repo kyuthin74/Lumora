@@ -147,6 +147,11 @@ const Login = () => {
         return;
       }
 
+      // Clear any previous user's cached data
+      await AsyncStorage.removeItem('lastRiskValue');
+      await AsyncStorage.removeItem('lastRiskLevel');
+      await AsyncStorage.removeItem('riskDataUserId');
+      
       // Store credentials in AsyncStorage
       await AsyncStorage.setItem("userId", userId);
       await AsyncStorage.setItem("authToken", token);

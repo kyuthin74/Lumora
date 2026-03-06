@@ -58,16 +58,9 @@ const Home: React.FC = () => {
 
         if (!userId || !token) {
           console.log('No user ID or token found');
-          // Try to load from AsyncStorage
-          const storedRiskValue = await AsyncStorage.getItem('lastRiskValue');
-          const storedRiskLevel = await AsyncStorage.getItem('lastRiskLevel');
-          
-          if (storedRiskValue !== null) {
-            setRiskValue(parseFloat(storedRiskValue));
-          }
-          if (storedRiskLevel !== null) {
-            setRiskLevel(storedRiskLevel);
-          }
+          // Don't show cached data for unauthenticated users
+          setRiskValue(undefined);
+          setRiskLevel(undefined);
           setIsLoadingRisk(false);
           return;
         }
@@ -89,38 +82,26 @@ const Home: React.FC = () => {
             setRiskValue(data.risk_score);
             setRiskLevel(data.risk_level);
             
-            // Save to AsyncStorage
+            // Save to AsyncStorage with user validation
             await AsyncStorage.setItem('lastRiskValue', data.risk_score.toString());
             await AsyncStorage.setItem('lastRiskLevel', data.risk_level);
+            await AsyncStorage.setItem('riskDataUserId', userId);
+          } else {
+            // No risk data available for this user
+            setRiskValue(undefined);
+            setRiskLevel(undefined);
           }
         } else {
-          // If API call fails, try to load from AsyncStorage
-          const storedRiskValue = await AsyncStorage.getItem('lastRiskValue');
-          const storedRiskLevel = await AsyncStorage.getItem('lastRiskLevel');
-          
-          if (storedRiskValue !== null) {
-            setRiskValue(parseFloat(storedRiskValue));
-          }
-          if (storedRiskLevel !== null) {
-            setRiskLevel(storedRiskLevel);
-          }
+          // API call failed or no data - don't show cached data for new users
+          console.log('No risk data available from API');
+          setRiskValue(undefined);
+          setRiskLevel(undefined);
         }
       } catch (error) {
         console.error('Error fetching latest risk result:', error);
-        // Try to load from AsyncStorage on error
-        try {
-          const storedRiskValue = await AsyncStorage.getItem('lastRiskValue');
-          const storedRiskLevel = await AsyncStorage.getItem('lastRiskLevel');
-          
-          if (storedRiskValue !== null) {
-            setRiskValue(parseFloat(storedRiskValue));
-          }
-          if (storedRiskLevel !== null) {
-            setRiskLevel(storedRiskLevel);
-          }
-        } catch (err) {
-          console.error('Error loading from AsyncStorage:', err);
-        }
+        // Don't show cached data on error - keep state clean for new users
+        setRiskValue(undefined);
+        setRiskLevel(undefined);
       } finally {
         setIsLoadingRisk(false);
       }
@@ -264,7 +245,7 @@ const Home: React.FC = () => {
                       ? `Based on your recent entries, you have a moderate depression risk of ${Math.round(riskValue * 100)}%. Consider maintaining regular self-care and reaching out to friends or family.`
                       : `Based on your recent entries, you have a high depression risk of ${Math.round(riskValue * 100)}%. We strongly suggest you to take an appointment with a mental health professional.`
                   ) : (
-                    "Complete your daily check-in to get personalized insights about your mental health."
+                    "Take your first depression assessment test to receive your personalized risk analysis. You'll see your risk percentage (0-100%) and risk level (Low, Medium, or High) based on your responses, along with tailored recommendations for your mental wellness."
                   )}
                 </Text>
               </View>
