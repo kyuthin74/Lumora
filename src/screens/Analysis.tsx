@@ -49,6 +49,7 @@ interface WeeklyRiskData {
 interface MoodApiResponse {
   mood_type?: string;
 }
+
 // Helper function to format date range
 const formatDateRange = (startDate: string, endDate: string): string => {
   const start = new Date(startDate);
@@ -300,6 +301,7 @@ const Analysis: React.FC = () => {
         if (!userId || !token) {
           console.error('No user ID or token found');
           setWeeklyRiskHistory([]);
+          setRiskWeekIndex(0);
           setIsLoadingRisk(false);
           return;
         }
@@ -324,15 +326,19 @@ const Analysis: React.FC = () => {
         // Store full WeeklyRiskData objects
         if (data.weeks && Array.isArray(data.weeks)) {
           setWeeklyRiskHistory(data.weeks);
+          // Set to current week (last week in the array)
+          setRiskWeekIndex(Math.max(data.weeks.length - 1, 0));
         } else {
           // No data available
           setWeeklyRiskHistory([]);
+          setRiskWeekIndex(0);
         }
       } catch (err) {
         console.error('Error fetching weekly risk data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load data');
         // No fallback data
         setWeeklyRiskHistory([]);
+        setRiskWeekIndex(0);
       } finally {
         setIsLoadingRisk(false);
       }
@@ -714,7 +720,7 @@ const Analysis: React.FC = () => {
                       ))}
                     </View>
                   ) : (
-                    <View className="items-center justify-center py-8">
+                    <View className="items-center justify-center py-2">
                       <Text className="text-sm text-white/70">
                         No test results available for this week
                       </Text>
@@ -726,7 +732,7 @@ const Analysis: React.FC = () => {
           </View>
 
           {/* Pagination for Risk Chart */}
-          <View className="flex-row items-center justify-between mt-4 px-2">
+          <View className="flex-row items-center justify-between px-2">
             <TouchableOpacity
               onPress={prevRiskWeek}
               disabled={!hasRiskHistory || riskWeekIndex === 0}
