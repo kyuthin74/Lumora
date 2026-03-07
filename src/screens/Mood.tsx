@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -130,6 +130,7 @@ const Mood: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loggedMoodDates, setLoggedMoodDates] = useState<Set<string>>(() => new Set());
 
   const monthLabel = useMemo(() => {
     return currentMonth.toLocaleDateString(undefined, {
@@ -317,6 +318,100 @@ const Mood: React.FC = () => {
   const filteredEntries = useMemo(() => {
     return moodEntries.filter((entry) => entry.isoDate === selectedDate);
   }, [moodEntries, selectedDate]);
+
+  const todayISO = useMemo(() => toISODate(new Date()), []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const hydrateMonth = async () => {
+      try {
+        const token = await getAuthToken();
+        if (!token) {
+          return;
+        }
+
+        const year = currentMonth.getFullYear();
+        const monthIndex = currentMonth.getMonth();
+        const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+
+        const isoDates = Array.from({ length: daysInMonth }, (_, index) =>
+          toISODate(new Date(year, monthIndex, index + 1))
+        );
+
+        const hasEntries = await Promise.all(
+          isoDates.map(async (isoDate) => {
+            try {
+              const response = await fetch(
+                `${API_BASE_URL}/moods/daily?selected_date=${encodeURIComponent(isoDate)}`,
+                {
+                  method: 'GET',
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+
+              const payload: MoodApiResponse[] = await response.json().catch(() => []);
+
+              if (!response.ok) {
+                return false;
+              }
+
+              return Array.isArray(payload) && payload.length > 0;
+            } catch (error) {
+              console.error('Failed to prefetch mood day', isoDate, error);
+              return false;
+            }
+          })
+        );
+
+        if (isCancelled) {
+          return;
+        }
+
+        setLoggedMoodDates((prev) => {
+          const next = new Set(prev);
+          isoDates.forEach((isoDate) => next.delete(isoDate));
+          hasEntries.forEach((hasEntry, index) => {
+            if (hasEntry) {
+              next.add(isoDates[index]);
+            }
+          });
+          return next;
+        });
+      } catch (error) {
+        console.error('Failed to hydrate month mood dates', error);
+      }
+    };
+
+    hydrateMonth();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentMonth]);
+
+  useEffect(() => {
+    setLoggedMoodDates((prev) => {
+      const next = new Set(prev);
+      const hasDate = next.has(selectedDate);
+
+      if (filteredEntries.length > 0) {
+        if (hasDate) {
+          return prev;
+        }
+        next.add(selectedDate);
+        return next;
+      }
+
+      if (!hasDate) {
+        return prev;
+      }
+      next.delete(selectedDate);
+      return next;
+    });
+  }, [filteredEntries.length, selectedDate]);
   
 
   return (
@@ -367,12 +462,14 @@ const Mood: React.FC = () => {
               {monthMatrix.map((week, index) => (
                 <View key={week[0].iso + index} className="flex-row justify-between">
                   {week.map((day) => {
+                    const isToday = day.iso === todayISO;
                     const isSelected = day.iso === selectedDate;
+                    const hasLoggedMood = loggedMoodDates.has(day.iso);
                     return (
                       <TouchableOpacity
                         key={day.iso}
-                        className={`flex-1 items-center justify-center rounded-full py-2 ${
-                          isSelected ? 'bg-white/20' : ''
+                        className={`flex-1 items-center justify-center rounded-full py-3 ${
+                          isSelected ? 'bg-white/20' : hasLoggedMood ? 'bg-amber-200/60' : ''
                         }`}
                         activeOpacity={0.7}
                         onPress={() => setSelectedDate(day.iso)}
@@ -381,7 +478,9 @@ const Mood: React.FC = () => {
                           className="text-sm font-semibold"
                           style={[
                             styles.dayText,
-                            isSelected
+                            isToday
+                              ? styles.dayTextToday
+                              : isSelected
                               ? styles.dayTextSelected
                               : day.inCurrentMonth
                               ? styles.dayTextCurrent
@@ -496,8 +595,11 @@ const styles = StyleSheet.create({
   dayText: {
     textAlign: 'center',
   },
+  dayTextToday: {
+    color: '#EC4899',
+  },
   dayTextSelected: {
-    color: '#FFD966',
+    color: '#ffffff',
   },
   dayTextCurrent: {
     color: '#FFFFFF',
