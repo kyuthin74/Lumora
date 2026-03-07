@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Platform,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import Svg, {
   Line,
@@ -91,14 +92,46 @@ const API_BASE_URL =
     : 'http://127.0.0.1:8000';
 
 const moodLegend = [
-  { label: 'Neutral', color: '#BFDBFE' },
-  { label: 'Energetic', color: '#FBCFE8' },
-  { label: 'Happy', color: '#BBF7D0' },
-  { label: 'Satisfied', color: '#FEF3C7' },
-  { label: 'Tired', color: '#FED7AA' },
-  { label: 'Stressed', color: '#E9D5FF' },
-  { label: 'Angry', color: '#FECACA' },
-  { label: 'Sad', color: '#E5E7EB' },
+  {
+    label: 'Neutral',
+    color: '#60A5FA',
+    image: require('../assets/mood/neutral.png'),
+  },
+  {
+    label: 'Energetic',
+    color: '#EC4899',
+    image: require('../assets/mood/energetic.png'),
+  },
+  {
+    label: 'Happy',
+    color: '#34D399',
+    image: require('../assets/mood/happy.png'),
+  },
+  {
+    label: 'Satisfied',
+    color: '#FBBF24',
+    image: require('../assets/mood/satisfied.png'),
+  },
+  {
+    label: 'Tired',
+    color: '#FB923C',
+    image: require('../assets/mood/tired.png'),
+  },
+  {
+    label: 'Stressed',
+    color: '#A78BFA',
+    image: require('../assets/mood/stressed.png'),
+  },
+  {
+    label: 'Angry',
+    color: '#F87171',
+    image: require('../assets/mood/angry.png'),
+  },
+  {
+    label: 'Sad',
+    color: '#9CA3AF',
+    image: require('../assets/mood/sad.png'),
+  },
 ] as const;
 
 type MoodLabel = (typeof moodLegend)[number]['label'];
@@ -817,14 +850,21 @@ const Analysis: React.FC = () => {
             {moodLegend.map(slice => (
               <View
                 key={slice.label}
-                className="flex-row items-center gap-2"
-                style={{ width: '25%' }}
+                className="flex-row items-center gap-3"
+                style={{ width: '50%' }}
               >
-                <View
-                  style={{ backgroundColor: slice.color }}
-                  className="h-3 w-3 rounded-full"
+                <Image
+                  source={slice.image}
+                  className="h-9 w-9"
+                  resizeMode="contain"
+                  style={{ borderRadius: 12 }}
                 />
-                <Text className="text-sm text-gray-700">{slice.label}</Text>
+                <Text
+                  className="text-base font-semibold"
+                  style={{ color: slice.color }}
+                >
+                  {slice.label}
+                </Text>
               </View>
             ))}
           </View>
