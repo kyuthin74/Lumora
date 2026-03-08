@@ -31,6 +31,7 @@ export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<BottomTabParamList>;
   Nudge: { riskLevel: string; riskValue: number };
   AccountRemoved: undefined;
+  AccountManagement: undefined;
   Notifications: undefined;
   ForgotPassword: undefined;
   VerifyCode: { email: string };
@@ -59,6 +60,7 @@ const AppNavigator: React.FC = () => {
       <Stack.Screen name="MoodJournal" component={MoodJournal} />
       <Stack.Screen name="Nudge" component={NudgeScreen} />
       <Stack.Screen name="AccountRemoved" component={AccountRemoved} />
+      <Stack.Screen name="AccountManagement" component={require('../screens/AccountManagement').default} />
       <Stack.Screen name="Notifications" component={Notifications} />
       <Stack.Screen name="ForgotPassword" component={require('../screens/ForgotPassword').default} />
       <Stack.Screen name="VerifyCode" component={require('../screens/VerifyCode').default} />
