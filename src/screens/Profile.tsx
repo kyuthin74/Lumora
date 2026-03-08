@@ -8,6 +8,7 @@ import ProfileInput from "../components/ProfileInput";
 import OutButton from "../components/OutButton";
 import ConfirmModal from "../components/ConfirmModal";
 import EditProfile from "../components/EditProfile";
+import AccountManagementCard from "../components/AccountManagementCard";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { BottomTabParamList } from "../navigation/BottomTabNavigator";
 
@@ -65,7 +66,6 @@ const Profile = () => {
   const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
   const [riskAlerts, setRiskAlerts] = useState(true);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [profileInfo, setProfileInfo] = useState({
     displayName: "",
     email: "",
@@ -211,30 +211,6 @@ const Profile = () => {
     }
   }, []);
 
-  // Delete user account
-  const deleteUserAccount = useCallback(async (userId: string, token: string): Promise<void> => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/user/profile/`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || errorData.detail || "Failed to delete account");
-      }
-
-      // Clear stored credentials
-      await AsyncStorage.removeItem("userId");
-      await AsyncStorage.removeItem("authToken");
-    } catch (error) {
-      console.error("Error deleting account:", error);
-      throw error;
-    }
-  }, []);
-
   // Load profile data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
@@ -336,26 +312,6 @@ const Profile = () => {
     } catch (error) {
       setDeleteContactModalVisible(false);
       const message = error instanceof Error ? error.message : "Failed to delete emergency contact";
-      Alert.alert("Delete failed", message);
-    }
-  };
-
-  const handleDeleteConfirm = async () => {
-    const { userId, token } = await getUserCredentials();
-    
-    if (!userId || !token) {
-      Alert.alert("Error", "Please log in to delete your account.");
-      setDeleteModalVisible(false);
-      return;
-    }
-
-    try {
-      await deleteUserAccount(userId, token);
-      setDeleteModalVisible(false);
-      rootNavigation?.navigate("AccountRemoved");
-    } catch (error) {
-      setDeleteModalVisible(false);
-      const message = error instanceof Error ? error.message : "Failed to delete account";
       Alert.alert("Delete failed", message);
     }
   };
@@ -531,7 +487,7 @@ const Profile = () => {
             <TouchableOpacity onPress={handleDeleteContactPress} className="mr-4">
               <FontAwesome name="trash" size={22} color="#DC2626" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setActiveEditModal("contact")}>
+            <TouchableOpacity onPress={() => setActiveEditModal("contact")}> 
               <FontAwesome name="edit" size={22} color="#4093D6" />
             </TouchableOpacity>
           </View>
@@ -562,6 +518,9 @@ const Profile = () => {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* --- ACCOUNT MANAGEMENT CARD --- */}
+      <AccountManagementCard onPress={() => rootNavigation?.navigate("AccountManagement")}/>
 
       {/* --- NOTIFICATION SETTINGS CARD --- */}
       <View className="bg-white rounded-2xl p-5 border border-primary-200 mb-6">
@@ -608,79 +567,39 @@ const Profile = () => {
       </View>
 
       {/* --- SUPPORT CARD --- */}
-      <View className="bg-white rounded-2xl p-5 border border-primary-200 mb-6">
+      <View className="bg-white rounded-2xl p-5 border border-primary-200 mb-20">
         <View className="flex-row items-center mb-4">
           <FontAwesome name="question-circle" size={20} color="#000" />
-          <Text className="text-lg font-semibold text-gray-900 ml-2">Support</Text>
+          <Text className="text-lg font-semibold text-gray-900 ml-2">Contact Support</Text>
         </View>
 
-        {/* Help Center */}
-        <TouchableOpacity className="border border-muted rounded-xl p-3 flex-row items-center mb-4">
-          <FontAwesome name="question-circle" size={18} color="#000" />
-          <Text className="ml-3 text-gray-900">Help Center</Text>
-        </TouchableOpacity>
-
-        {/* Contact Support */}
-        <TouchableOpacity className="border border-muted rounded-xl p-3 flex-row items-center mb-4">
-          <FontAwesome name="envelope" size={18} color="#000" />
-          <Text className="ml-3 text-gray-900">Contact Support</Text>
-        </TouchableOpacity>
-
-        {/* Crisis Support Box */}
-        <View className="border border-red-400 bg-red-50 rounded-xl p-4">
-          <View className="flex-row items-center mb-2">
-            <FontAwesome name="info-circle" size={18} color="#D32F2F" />
-            <Text className="text-red-600 font-semibold ml-2">Crisis Support</Text>
+        {/* Chiang Rai Emergency */}
+        <TouchableOpacity className="border border-gray-300 rounded-xl p-4 mb-4">
+          <View className="flex-row items-center mb-3">
+            <FontAwesome name="phone" size={18} color="#000" />
+            <Text className="ml-3 text-gray-900 font-semibold">Chiang Rai Emergency</Text>
           </View>
+          <View className="bg-red-500 rounded-lg py-2 px-4 items-center">
+            <Text className="text-white font-semibold">Call 1996</Text>
+          </View>
+        </TouchableOpacity>
 
-          <Text className="text-red-700 mb-3">
-            If you’re experiencing a mental health crisis:
-          </Text>
-
-          <TouchableOpacity className="bg-red-500 rounded-lg py-2 items-center">
-            <Text className="text-white font-semibold">Call 1323 (Thai Crisis Hotline)</Text>
-          </TouchableOpacity>
-        </View>
+        {/* MFU Medical */}
+        <TouchableOpacity className="border border-gray-300 rounded-xl p-4">
+          <View className="flex-row items-center mb-3">
+            <FontAwesome name="phone" size={18} color="#000" />
+            <Text className="ml-3 text-gray-900 font-semibold">MFU Medical</Text>
+          </View>
+          <View className="bg-red-500 rounded-lg py-2 px-4 items-center">
+            <Text className="text-white font-semibold">Call 0-5391-4000</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
-      {/* --- LOGOUT BUTTON --- */}
-      <OutButton
-        label="Logout"
-        icon="log-out-outline"
-        onPress={handleLogoutPress}
-      />
-      {/* --- DANGER ZONE --- */}
-      <View className="mt-6 mb-20">
-        <View className="flex-row items-center mb-3">
-          <FontAwesome name="warning" size={18} color="#DC2626" />
-          <Text className="text-red-600 text-lg font-semibold ml-2">Danger Zone</Text>
-        </View>
-
-        <OutButton
-          label="Delete Account"
-          icon="trash-outline"
-          type="danger"
-          onPress={handleDeletePress}
-        />
-      </View>
+      {/* ...existing code... */}
       </ScrollView>
 
-      <ConfirmModal
-        visible={logoutModalVisible}
-        title="Log out"
-        message="Are you sure you want to log out?"
-        onCancel={handleLogoutCancel}
-        onConfirm={handleLogoutConfirm}
-      />
-
-      <ConfirmModal
-        visible={deleteModalVisible}
-        title="Delete account"
-        message="Are you sure you want to delete your account?"
-        subMessage="Deleting your account will remove all of your information from our database. This cannot be undone."
-        onCancel={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-      />
+      {/* ...existing code... */}
 
       <ConfirmModal
         visible={deleteContactModalVisible}
