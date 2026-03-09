@@ -148,11 +148,14 @@ const Mood: React.FC = () => {
     const startWeekday = firstDayOfMonth.getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const prevMonthDays = new Date(year, month, 0).getDate();
+    
+    const totalDaysNeeded = startWeekday + daysInMonth;
+    const weeksNeeded = Math.ceil(totalDaysNeeded / 7);
 
     let dayCounter = 1;
     let nextMonthDay = 1;
 
-    for (let week = 0; week < 6; week += 1) {
+    for (let week = 0; week < weeksNeeded; week += 1) {
       const weekRow: Array<{ iso: string; label: string; inCurrentMonth: boolean }> = [];
       for (let day = 0; day < 7; day += 1) {
         let date: Date;
@@ -458,7 +461,7 @@ const Mood: React.FC = () => {
               ))}
             </View>
 
-            <View className="mt-4 space-y-2">
+            <View className="mt-4 space-y-6">
               {monthMatrix.map((week, index) => (
                 <View key={week[0].iso + index} className="flex-row justify-between">
                   {week.map((day) => {
@@ -468,11 +471,18 @@ const Mood: React.FC = () => {
                     return (
                       <TouchableOpacity
                         key={day.iso}
-                        className={`flex-1 items-center justify-center rounded-full py-3 ${
+                        className={`items-center justify-center rounded-full ${
                           isSelected ? 'bg-white/20' : hasLoggedMood ? 'bg-amber-200/60' : ''
                         }`}
+                        style={styles.dayButton}
                         activeOpacity={0.7}
-                        onPress={() => setSelectedDate(day.iso)}
+                        onPress={() => {
+                          if (!day.inCurrentMonth) {
+                            const clickedDate = new Date(day.iso);
+                            setCurrentMonth(new Date(clickedDate.getFullYear(), clickedDate.getMonth(), 1));
+                          }
+                          setSelectedDate(day.iso);
+                        }}
                       >
                         <Text
                           className="text-sm font-semibold"
@@ -592,6 +602,11 @@ const Mood: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  dayButton: {
+    width: 36,
+    height: 36,
+    marginHorizontal: 2,
+  },
   dayText: {
     textAlign: 'center',
   },
