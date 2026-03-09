@@ -573,22 +573,22 @@ const Profile = () => {
           <Text className="text-lg font-semibold text-gray-900 ml-2">Contact Support</Text>
         </View>
 
-        {/* Chiang Rai Emergency */}
+        {/* MFU Counselling Service Center */}
         <TouchableOpacity className="border border-gray-300 rounded-xl p-4 mb-4">
           <View className="flex-row items-center mb-3">
             <FontAwesome name="phone" size={18} color="#000" />
-            <Text className="ml-3 text-gray-900 font-semibold">Chiang Rai Emergency</Text>
+            <Text className="ml-3 text-gray-900 font-semibold">MFU Counselling Service Center</Text>
           </View>
           <View className="bg-red-500 rounded-lg py-2 px-4 items-center">
-            <Text className="text-white font-semibold">Call 1996</Text>
+            <Text className="text-white font-semibold">Call 053-916666-9</Text>
           </View>
         </TouchableOpacity>
 
-        {/* MFU Medical */}
+        {/* MFU Medical Center*/}
         <TouchableOpacity className="border border-gray-300 rounded-xl p-4">
           <View className="flex-row items-center mb-3">
             <FontAwesome name="phone" size={18} color="#000" />
-            <Text className="ml-3 text-gray-900 font-semibold">MFU Medical</Text>
+            <Text className="ml-3 text-gray-900 font-semibold">MFU Medical Center</Text>
           </View>
           <View className="bg-red-500 rounded-lg py-2 px-4 items-center">
             <Text className="text-white font-semibold">Call 0-5391-4000</Text>
