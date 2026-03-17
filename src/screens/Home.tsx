@@ -7,7 +7,7 @@ import {
   Image,
   Platform,
 } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -24,29 +24,101 @@ import type { RootStackParamList } from '../navigation/AppNavigator';
 import type { BottomTabParamList } from '../navigation/BottomTabNavigator';
 import Button from '../components/Button';
 import { useUnreadNotifications } from '../hooks/useUnreadNotifications';
+import { getRandomNudge } from '../utils/nudges';
 
 const API_BASE_URL =
   Platform.OS === 'android'
     ? 'http://10.0.2.2:8000'
     : 'http://127.0.0.1:8000';
 
-const affirmations = [
+const allAffirmations = [
   "You are capable of amazing things. Every step forward is progress, no matter how small.",
   "You deserve care every day. With rest, movement, nourishment, and compassion, you lay the ground where confidence grows.",
   "Celebrate your small wins. Every healthy choice, boundary you protect, and moment you choose gentleness over criticism.",
   "When you listen with kindness, you make space for healing, learning, and the next small, caring step forward.",
   "You’re allowed to move at your own pace. Every breath, sip of water, and tiny action you take is a quiet vote for your well-being.",
+  "Your worth is not defined by your productivity. Rest is a valid and necessary choice.",
+  "You are allowed to feel whatever you are feeling. Your emotions are valid.",
+  "Every day is a fresh start. You can always try again tomorrow, without judgment.",
+  "You are stronger than the obstacles you are facing right now.",
+  "Be gentle with yourself. True healing and personal growth take time.",
+  "You do not have to have it all figured out right now. Take it one day at a time.",
+  "Your presence brings light to the world, even on the days your light feels dim.",
+  "It is okay to ask for support. Reaching out is a profound sign of courage.",
+  "Trust your own journey. You are exactly where you need to be to learn and grow.",
+  "You are worthy of the exact same love and kindness that you readily offer others.",
+  "Focus on your own path. You are uniquely you, and comparing yourself steals your joy.",
+  "Every slow, deep breath you take is a quiet moment of care for your body and mind.",
+  "Your mistakes are just proof that you are trying and learning. Keep moving forward.",
+  "You have survived 100% of your hardest days. You possess the resilience to get through this.",
+  "Give yourself permission to pause and reset. The world will wait for you.",
+  "Embrace your beautifully imperfect self. Striving for perfection is an illusion.",
+  "You are planting seeds for a wonderful future. Trust the natural timing of your life.",
+  "Your voice matters, your thoughts matter, your feelings matter, and you matter.",
+  "Forgive yourself for what you didn't know before you learned it.",
+  "You are entirely enough, just as you are right now, in this very moment.",
 ];
+
+// Seeded random approach to get the same 5 quotes for any given day
+const getDailyAffirmations = () => {
+  const today = new Date();
+  const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  
+  // Predictable pseudo-random generator
+  const random = (s: number) => {
+    const x = Math.sin(s) * 10000;
+    return x - Math.floor(x);
+  };
+  
+  const shuffled = [...allAffirmations];
+  let currentSeed = seed;
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(random(currentSeed++) * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  
+  return shuffled.slice(0, 5);
+};
 
 const Home: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<BottomTabParamList, 'Home'>>();
+  const [dailyAffirmations, setDailyAffirmations] = useState<string[]>([]);
   const [affirmationIndex, setAffirmationIndex] = useState(0);
+
+  useEffect(() => {
+    setDailyAffirmations(getDailyAffirmations());
+  }, []);
   const unreadCount = useUnreadNotifications();
   const [riskValue, setRiskValue] = useState<number | undefined>(route.params?.riskValue);
   const [riskLevel, setRiskLevel] = useState<string | undefined>(route.params?.riskLevel);
   const [isLoadingRisk, setIsLoadingRisk] = useState(false);
+  const [currentNudge, setCurrentNudge] = useState<string>("");
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchNudge = async () => {
+        try {
+          const userId = await AsyncStorage.getItem('userId');
+          if (!userId) return;
+
+          const savedNudge = await AsyncStorage.getItem(`lastNudge_${userId}`);
+          if (savedNudge) {
+            setCurrentNudge(savedNudge);
+          } else {
+            const newNudge = getRandomNudge(riskLevel);
+            setCurrentNudge(newNudge);
+            await AsyncStorage.setItem(`lastNudge_${userId}`, newNudge);
+          }
+        } catch (error) {
+          console.error("Error fetching nudge", error);
+        }
+      };
+      
+      fetchNudge();
+    }, [riskLevel])
+  );
 
   // Fetch latest risk result from API
   useEffect(() => {
@@ -128,11 +200,13 @@ const Home: React.FC = () => {
   }, [route.params?.riskValue, route.params?.riskLevel]);
 
   const nextAffirmation = () => {
-    setAffirmationIndex((prev) => (prev + 1) % affirmations.length);
+    if (dailyAffirmations.length === 0) return;
+    setAffirmationIndex((prev) => (prev + 1) % dailyAffirmations.length);
   };
 
   const prevAffirmation = () => {
-    setAffirmationIndex((prev) => (prev - 1 + affirmations.length) % affirmations.length);
+    if (dailyAffirmations.length === 0) return;
+    setAffirmationIndex((prev) => (prev - 1 + dailyAffirmations.length) % dailyAffirmations.length);
   };
 
   const handleStartCheckIn = () => {
@@ -170,13 +244,13 @@ const Home: React.FC = () => {
             </View>
 
             <Text className="text-white/95 text-lg mb-2 min-h-[80px]">
-              {affirmations[affirmationIndex]}
+              {dailyAffirmations[affirmationIndex] || ""}
             </Text>
 
             <View className="flex-row items-center justify-between">
               {/* Dots */}
               <View className="flex-row gap-1">
-                {affirmations.map((_, idx) => (
+                {dailyAffirmations.map((_, idx) => (
                   <View
                     key={idx}
                     className={`h-1.5 rounded-full transition-all ${idx === affirmationIndex
@@ -276,7 +350,7 @@ const Home: React.FC = () => {
             </View>
 
             <Text className="text-gray-800 text-lg mb-3">
-              Try a 5-minutes breathing exercise. Research shows it can reduce anxiety up to 25% and improve focus.
+              {currentNudge}
             </Text>
 
           </Card>
