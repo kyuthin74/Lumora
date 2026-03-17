@@ -885,15 +885,6 @@ const Analysis: React.FC = () => {
               </Text>
             </TouchableOpacity>
 
-            <View className="flex-row gap-2">
-              {weeklyMoodHistory.map((_, idx) => (
-                <View
-                  key={idx}
-                  className={`h-2 rounded-full ${idx === moodWeekIndex ? "bg-primary w-6" : "bg-primary/40 w-2"}`}
-                />
-              ))}
-            </View>
-
             <TouchableOpacity
               onPress={nextMoodWeek}
               disabled={isLastMoodWeek}
