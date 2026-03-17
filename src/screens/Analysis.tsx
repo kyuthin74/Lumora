@@ -53,8 +53,8 @@ interface MoodApiResponse {
 
 // Helper function to format date range
 const formatDateRange = (startDate: string, endDate: string): string => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = parseISODate(startDate);
+  const end = parseISODate(endDate);
   
   const monthNamesShort = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -75,7 +75,7 @@ const filterPastDays = (data: RiskPoint[], weekStartDate: string): RiskPoint[] =
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  const weekStart = new Date(weekStartDate);
+  const weekStart = parseISODate(weekStartDate);
   
   return data.filter((point, index) => {
     const pointDate = new Date(weekStart);
@@ -161,7 +161,12 @@ const DAYS_IN_WEEK = 7;
 const WEEKS_TO_FETCH = 2;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-const formatISODate = (date: Date) => date.toISOString().split('T')[0];
+const formatISODate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const parseISODate = (iso: string) => {
   const [year, month, day] = iso.split('-').map(Number);
@@ -203,6 +208,72 @@ const buildWeekDateStrings = (weekStart: Date) =>
   Array.from({ length: DAYS_IN_WEEK }, (_, offset) =>
     formatISODate(new Date(weekStart.getTime() + offset * DAY_IN_MS)),
   );
+
+const RISK_DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+
+const createEmptyRiskWeek = (weekStart: Date): WeeklyRiskData => {
+  const normalizedWeekStart = getMondayStart(weekStart);
+  const weekEnd = getWeekEndDate(normalizedWeekStart);
+
+  return {
+    week_number: 0,
+    week_start_date: formatISODate(normalizedWeekStart),
+    week_end_date: formatISODate(weekEnd),
+    average_risk: 0,
+    daily_risks: RISK_DAY_LABELS.map(day => ({
+      day,
+      value: 0,
+    })),
+  };
+};
+
+const isRiskWeekEmpty = (week: WeeklyRiskData | undefined) => {
+  if (!week) {
+    return true;
+  }
+
+  return week.daily_risks.every(point => point.value === 0);
+};
+
+const buildRiskTimelineWithCurrentWeek = (weeks: WeeklyRiskData[]): WeeklyRiskData[] => {
+  const currentWeek = createEmptyRiskWeek(new Date());
+  const weekMap = new Map<string, WeeklyRiskData>();
+
+  weeks.forEach(week => {
+    const normalizedWeek = createEmptyRiskWeek(parseISODate(week.week_start_date));
+    weekMap.set(normalizedWeek.week_start_date, {
+      ...normalizedWeek,
+      ...week,
+      week_start_date: normalizedWeek.week_start_date,
+      week_end_date: normalizedWeek.week_end_date,
+    });
+  });
+
+  if (!weekMap.has(currentWeek.week_start_date)) {
+    weekMap.set(currentWeek.week_start_date, currentWeek);
+  }
+
+  const sortedStarts = Array.from(weekMap.keys()).sort(
+    (left, right) => parseISODate(left).getTime() - parseISODate(right).getTime(),
+  );
+
+  if (!sortedStarts.length) {
+    return [currentWeek];
+  }
+
+  const earliest = parseISODate(sortedStarts[0]);
+  const latest = parseISODate(sortedStarts[sortedStarts.length - 1]);
+  const continuousWeeks: WeeklyRiskData[] = [];
+  const cursor = new Date(earliest);
+
+  while (cursor.getTime() <= latest.getTime()) {
+    const weekStartISO = formatISODate(cursor);
+    continuousWeeks.push(weekMap.get(weekStartISO) ?? createEmptyRiskWeek(cursor));
+    cursor.setDate(cursor.getDate() + DAYS_IN_WEEK);
+  }
+
+  return continuousWeeks;
+};
 
 const buildPreviousWeekStartDates = (referenceWeekStart: Date, weeksToBuild: number) => {
   const monday = getMondayStart(referenceWeekStart);
@@ -309,6 +380,7 @@ const Analysis: React.FC = () => {
   const [layoutWidth, setLayoutWidth] = useState(0);
   const [riskWeekIndex, setRiskWeekIndex] = useState(0);
   const [weeklyRiskHistory, setWeeklyRiskHistory] = useState<WeeklyRiskData[]>([]);
+  const [isLoadingOlderRiskWeeks, setIsLoadingOlderRiskWeeks] = useState(false);
   const [isLoadingRisk, setIsLoadingRisk] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [weeklyMoodHistory, setWeeklyMoodHistory] = useState<WeeklyMoodWeek[]>(
@@ -333,8 +405,9 @@ const Analysis: React.FC = () => {
 
         if (!userId || !token) {
           console.error('No user ID or token found');
-          setWeeklyRiskHistory([]);
-          setRiskWeekIndex(0);
+          const fallbackWeeks = buildRiskTimelineWithCurrentWeek([]);
+          setWeeklyRiskHistory(fallbackWeeks);
+          setRiskWeekIndex(Math.max(fallbackWeeks.length - 1, 0));
           setIsLoadingRisk(false);
           return;
         }
@@ -358,20 +431,25 @@ const Analysis: React.FC = () => {
         
         // Store full WeeklyRiskData objects
         if (data.weeks && Array.isArray(data.weeks)) {
-          setWeeklyRiskHistory(data.weeks);
-          // Set to current week (last week in the array)
-          setRiskWeekIndex(Math.max(data.weeks.length - 1, 0));
+          const normalizedWeeks = buildRiskTimelineWithCurrentWeek(data.weeks as WeeklyRiskData[]);
+          const currentWeekStart = createEmptyRiskWeek(new Date()).week_start_date;
+          const currentIndex = normalizedWeeks.findIndex(
+            week => week.week_start_date === currentWeekStart,
+          );
+
+          setWeeklyRiskHistory(normalizedWeeks);
+          setRiskWeekIndex(currentIndex !== -1 ? currentIndex : Math.max(normalizedWeeks.length - 1, 0));
         } else {
-          // No data available
-          setWeeklyRiskHistory([]);
-          setRiskWeekIndex(0);
+          const fallbackWeeks = buildRiskTimelineWithCurrentWeek([]);
+          setWeeklyRiskHistory(fallbackWeeks);
+          setRiskWeekIndex(Math.max(fallbackWeeks.length - 1, 0));
         }
       } catch (err) {
         console.error('Error fetching weekly risk data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load data');
-        // No fallback data
-        setWeeklyRiskHistory([]);
-        setRiskWeekIndex(0);
+        const fallbackWeeks = buildRiskTimelineWithCurrentWeek([]);
+        setWeeklyRiskHistory(fallbackWeeks);
+        setRiskWeekIndex(Math.max(fallbackWeeks.length - 1, 0));
       } finally {
         setIsLoadingRisk(false);
       }
@@ -380,6 +458,57 @@ const Analysis: React.FC = () => {
     fetchWeeklyRiskData();
   }, []);
 
+  const loadOlderRiskWeeks = useCallback(async () => {
+    if (isLoadingOlderRiskWeeks || !weeklyRiskHistory.length) {
+      return;
+    }
+
+    setIsLoadingOlderRiskWeeks(true);
+
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const userId = await AsyncStorage.getItem('userId');
+      const earliestWeek = weeklyRiskHistory[0];
+      const previousWeekStart = new Date(parseISODate(earliestWeek.week_start_date));
+      previousWeekStart.setDate(previousWeekStart.getDate() - DAYS_IN_WEEK);
+
+      let olderWeek = createEmptyRiskWeek(previousWeekStart);
+
+      if (token && userId) {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/depression-risk-results/${userId}/weekly?start_date=${encodeURIComponent(formatISODate(previousWeekStart))}`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data?.week) {
+              const normalizedWeek = createEmptyRiskWeek(parseISODate(data.week.week_start_date));
+              olderWeek = {
+                ...normalizedWeek,
+                ...data.week,
+                week_start_date: normalizedWeek.week_start_date,
+                week_end_date: normalizedWeek.week_end_date,
+              };
+            }
+          }
+        } catch (fetchError) {
+          console.error('Error fetching older risk week:', fetchError);
+        }
+      }
+
+      setWeeklyRiskHistory(prev => [olderWeek, ...prev]);
+    } finally {
+      setIsLoadingOlderRiskWeeks(false);
+    }
+  }, [isLoadingOlderRiskWeeks, weeklyRiskHistory]);
   const refreshWeeklyMoodHistory = useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem('authToken');
@@ -472,6 +601,7 @@ const Analysis: React.FC = () => {
   // Get current week's data
   const currentWeekData = weeklyRiskHistory[riskWeekIndex];
   const weeklyRiskData = currentWeekData?.daily_risks || [];
+  const isEmptyRiskWeek = isRiskWeekEmpty(currentWeekData);
   
   // Filter out future days from graph (but keep all for x-axis labels)
   const pastRiskData = currentWeekData 
@@ -493,7 +623,7 @@ const Analysis: React.FC = () => {
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
         
-        return formatDateRange(weekStart.toISOString().split('T')[0], weekEnd.toISOString().split('T')[0]);
+        return formatDateRange(formatISODate(weekStart), formatISODate(weekEnd));
       })();
 
   // Navigation functions for risk chart
@@ -507,9 +637,14 @@ const Analysis: React.FC = () => {
     if (!weeklyRiskHistory.length) {
       return;
     }
-    setRiskWeekIndex(prev => Math.max(prev - 1, 0));
-  };
 
+    if (riskWeekIndex > 0) {
+      setRiskWeekIndex(prev => prev - 1);
+      return;
+    }
+
+    loadOlderRiskWeeks();
+  };
   // Navigation functions for mood chart
   const nextMoodWeek = () => {
     setMoodWeekIndex(prev => {
@@ -558,7 +693,7 @@ const Analysis: React.FC = () => {
   );
 
   const polylinePoints = useMemo(() => {
-    if (!chartInnerWidth || pastRiskData.length === 0) {
+    if (!chartInnerWidth || pastRiskData.length === 0 || isEmptyRiskWeek) {
       return '';
     }
     const step = chartInnerWidth / (weeklyRiskData.length - 1);
@@ -569,9 +704,9 @@ const Analysis: React.FC = () => {
         return `${x},${y}`;
       })
       .join(' ');
-  }, [chartInnerWidth, pastRiskData, weeklyRiskData.length]);
+  }, [chartInnerWidth, isEmptyRiskWeek, pastRiskData, weeklyRiskData.length]);
   
-  const hasRiskData = pastRiskData.length > 0;
+  const hasRiskData = pastRiskData.length > 0 && !isEmptyRiskWeek;
 
   const pieArcs = useMemo(() => {
     const total = moodSlicesForDisplay.reduce((sum, slice) => sum + slice.value, 0);
@@ -768,39 +903,26 @@ const Analysis: React.FC = () => {
           <View className="flex-row items-center justify-between px-2">
             <TouchableOpacity
               onPress={prevRiskWeek}
-              disabled={!hasRiskHistory || riskWeekIndex === 0}
+              disabled={!hasRiskHistory || isLoadingOlderRiskWeeks}
               className="flex-row items-center gap-1"
               activeOpacity={0.7}
             >
-              <View className={`w-8 h-8 rounded-full items-center justify-center ${!hasRiskHistory || riskWeekIndex === 0 ? 'bg-white/10' : 'bg-white/20'}`}>
-                <ChevronLeft size={18} color={!hasRiskHistory || riskWeekIndex === 0 ? '#ffffff80' : '#ffffff'} />
+              <View className={`w-8 h-8 rounded-full items-center justify-center ${!hasRiskHistory || isLoadingOlderRiskWeeks ? 'bg-white/10' : 'bg-white/20'}`}>
+                <ChevronLeft size={18} color={!hasRiskHistory || isLoadingOlderRiskWeeks ? '#ffffff80' : '#ffffff'} />
               </View>
-              <Text className={`text-xs ${!hasRiskHistory || riskWeekIndex === 0 ? 'text-white/50' : 'text-white'}`}>Previous Week</Text>
+              <Text className={`text-xs ${!hasRiskHistory || isLoadingOlderRiskWeeks ? 'text-white/50' : 'text-white'}`}>Previous Week</Text>
             </TouchableOpacity>
-
-            <View className="flex-row gap-2">
-              {hasRiskHistory ? (
-                weeklyRiskHistory.map((_, idx) => (
-                  <View
-                    key={idx}
-                    className={`h-2 rounded-full ${idx === riskWeekIndex ? 'bg-white w-6' : 'bg-white/40 w-2'}`}
-                  />
-                ))
-              ) : (
-                <View className="h-2 rounded-full bg-white/40 w-2" />
-              )}
-            </View>
 
             <TouchableOpacity
               onPress={nextRiskWeek}
-              disabled={!hasRiskHistory || riskWeekIndex === weeklyRiskHistory.length - 1}
+              disabled={!hasRiskHistory || isLoadingOlderRiskWeeks || riskWeekIndex === weeklyRiskHistory.length - 1}
               className="flex-row items-center gap-1"
               activeOpacity={0.7}
             >
-              <Text className={`text-xs ${!hasRiskHistory || riskWeekIndex === weeklyRiskHistory.length - 1 ? 'text-white/50' : 'text-white'}`}>Next Week</Text>
+              <Text className={`text-xs ${!hasRiskHistory || isLoadingOlderRiskWeeks || riskWeekIndex === weeklyRiskHistory.length - 1 ? 'text-white/50' : 'text-white'}`}>Next Week</Text>
               
-                <View className={`w-8 h-8 rounded-full items-center justify-center ${!hasRiskHistory || riskWeekIndex === weeklyRiskHistory.length - 1 ? 'bg-white/10' : 'bg-white/20'}`}>
-                <ChevronRight size={18} color={!hasRiskHistory || riskWeekIndex === weeklyRiskHistory.length - 1 ? '#ffffff80' : '#ffffff'} />
+                <View className={`w-8 h-8 rounded-full items-center justify-center ${!hasRiskHistory || isLoadingOlderRiskWeeks || riskWeekIndex === weeklyRiskHistory.length - 1 ? 'bg-white/10' : 'bg-white/20'}`}>
+                <ChevronRight size={18} color={!hasRiskHistory || isLoadingOlderRiskWeeks || riskWeekIndex === weeklyRiskHistory.length - 1 ? '#ffffff80' : '#ffffff'} />
               </View>
 
             </TouchableOpacity>
