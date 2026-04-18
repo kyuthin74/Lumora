@@ -1,14 +1,13 @@
 import React, { useState, useCallback } from "react";
+import { getApiBaseUrl } from "../config/api";
 import { View, Text, TouchableOpacity, Platform, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import OutButton from "../components/OutButton";
 import { ArrowLeft } from "lucide-react-native";
 import ConfirmModal from "../components/ConfirmModal";
+import { deleteRegisteredPushToken, PUSH_STATUS_STORAGE_KEY } from "../services/pushNotifications";
 
-const API_BASE_URL =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:8000"
-    : "http://127.0.0.1:8000";
+const API_BASE_URL = getApiBaseUrl();
 
 // Retrieve credentials from AsyncStorage
 const getUserCredentials = async (): Promise<{ userId: string | null; token: string | null }> => {
@@ -47,6 +46,16 @@ const AccountManagement = ({ navigation }) => {
 
   const handleLogoutConfirm = async () => {
     setLogoutModalVisible(false);
+
+    const { token } = await getUserCredentials();
+    if (token) {
+      try {
+        await deleteRegisteredPushToken(token);
+      } catch (error) {
+        console.error("Failed to delete push token on logout:", error);
+      }
+    }
+
     // Clear all cached data on logout
     try {
       await AsyncStorage.removeItem('userId');
@@ -54,6 +63,7 @@ const AccountManagement = ({ navigation }) => {
       await AsyncStorage.removeItem('lastRiskValue');
       await AsyncStorage.removeItem('lastRiskLevel');
       await AsyncStorage.removeItem('riskDataUserId');
+      await AsyncStorage.removeItem(PUSH_STATUS_STORAGE_KEY);
     } catch (err) {
       console.error('Error clearing AsyncStorage on logout:', err);
     }

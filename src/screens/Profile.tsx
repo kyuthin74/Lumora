@@ -5,12 +5,16 @@ import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import ProfileInput from "../components/ProfileInput";
-import OutButton from "../components/OutButton";
 import ConfirmModal from "../components/ConfirmModal";
 import EditProfile from "../components/EditProfile";
 import AccountManagementCard from "../components/AccountManagementCard";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { BottomTabParamList } from "../navigation/BottomTabNavigator";
+import {
+  fetchPushNotificationStatus,
+  PUSH_STATUS_STORAGE_KEY,
+  updateDailyReminderPreference,
+} from "../services/pushNotifications";
 
 const API_BASE_URL =
   Platform.OS === "android"
@@ -63,9 +67,8 @@ const Profile = () => {
     return tabNavigation.getParent<NavigationProp<RootStackParamList>>();
   }, [tabNavigation]);
   const [isLoading, setIsLoading] = useState(true);
-  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
+  const [dailyReminderEnabled, setDailyReminderEnabled] = useState(false);
   const [riskAlerts, setRiskAlerts] = useState(true);
-  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [profileInfo, setProfileInfo] = useState({
     displayName: "",
     email: "",
@@ -219,6 +222,11 @@ const Profile = () => {
 
       const { userId, token } = await getUserCredentials();
 
+      const cachedDailyReminder = await AsyncStorage.getItem(PUSH_STATUS_STORAGE_KEY);
+      if (cachedDailyReminder !== null) {
+        setDailyReminderEnabled(cachedDailyReminder === "true");
+      }
+
       if (!userId || !token) {
         Alert.alert("Error", "Please log in to view your profile.");
         setIsLoading(false);
@@ -227,9 +235,10 @@ const Profile = () => {
 
       try {
         // Fetch both endpoints in parallel
-        const [profileData, contactData] = await Promise.all([
+        const [profileData, contactData, pushStatus] = await Promise.all([
           fetchUserProfile(userId, token),
           fetchEmergencyContact(userId, token),
+          fetchPushNotificationStatus(token).catch(() => null),
         ]);
 
         // Update profile info
@@ -238,7 +247,6 @@ const Profile = () => {
             displayName: profileData.full_name || "",
             email: profileData.email || "",
           });
-          setPushNotificationsEnabled(profileData.is_notify_enabled);
           setRiskAlerts(profileData.is_risk_alert_enabled);
 
           // Update emergency contact from profile response if available
@@ -259,6 +267,11 @@ const Profile = () => {
             email: contactData.contact_email || "",
           });
         }
+
+        if (pushStatus) {
+          setDailyReminderEnabled(pushStatus.enabled);
+          await AsyncStorage.setItem(PUSH_STATUS_STORAGE_KEY, String(pushStatus.enabled));
+        }
       } catch (error) {
         console.error("Error loading profile data:", error);
         Alert.alert("Error", "Failed to load profile data. Please try again.");
@@ -270,28 +283,6 @@ const Profile = () => {
     loadProfileData();
   }, [fetchUserProfile, fetchEmergencyContact])
   );
-
-  const handleLogoutPress = () => setLogoutModalVisible(true);
-  const handleLogoutCancel = () => setLogoutModalVisible(false);
-  const handleLogoutConfirm = async () => {
-    setLogoutModalVisible(false);
-    
-    // Clear all cached data on logout
-    try {
-      await AsyncStorage.removeItem('userId');
-      await AsyncStorage.removeItem('authToken');
-      await AsyncStorage.removeItem('lastRiskValue');
-      await AsyncStorage.removeItem('lastRiskLevel');
-      await AsyncStorage.removeItem('riskDataUserId');
-    } catch (err) {
-      console.error('Error clearing AsyncStorage on logout:', err);
-    }
-    
-    rootNavigation?.navigate("Login");
-  };
-
-  const handleDeletePress = () => setDeleteModalVisible(true);
-  const handleDeleteCancel = () => setDeleteModalVisible(false);
 
   // Emergency contact delete handlers
   const handleDeleteContactPress = () => setDeleteContactModalVisible(true);
@@ -392,9 +383,9 @@ const Profile = () => {
     }
   };
 
-  // Toggle push notifications
-  const handleToggleNotifications = async () => {
-    const newValue = !pushNotificationsEnabled;
+  // Toggle daily reminder
+  const handleToggleDailyReminder = async () => {
+    const newValue = !dailyReminderEnabled;
     const { userId, token } = await getUserCredentials();
     
     if (!userId || !token) {
@@ -403,10 +394,10 @@ const Profile = () => {
     }
 
     try {
-      await updateUserProfile(userId, token, { is_notify_enabled: newValue });
-      setPushNotificationsEnabled(newValue);
+      const updatedStatus = await updateDailyReminderPreference(token, newValue);
+      setDailyReminderEnabled(updatedStatus.enabled);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to update notifications";
+      const message = error instanceof Error ? error.message : "Failed to update daily reminder";
       Alert.alert("Update failed", message);
     }
   };
@@ -531,20 +522,20 @@ const Profile = () => {
           </Text>
         </View>
 
-        {/* Push Notifications */}
+        {/* Daily Reminder */}
         <View className="flex-row justify-between items-center mb-4">
           <View>
-            <Text className="text-gray-800 font-semibold">Push Notifications</Text>
-            <Text className="text-gray-600 text-sm">General app notifications</Text>
+            <Text className="text-gray-800 font-semibold">Daily reminder</Text>
+            <Text className="text-gray-600 text-sm">Receive your daily mental health reminder</Text>
           </View>
 
           <TouchableOpacity
-            onPress={handleToggleNotifications}
+            onPress={handleToggleDailyReminder}
           >
             <FontAwesome
-              name={pushNotificationsEnabled ? "toggle-on" : "toggle-off"}
+              name={dailyReminderEnabled ? "toggle-on" : "toggle-off"}
               size={38}
-              color={pushNotificationsEnabled ? "#4093D6" : "#9CA3AF"}
+              color={dailyReminderEnabled ? "#4093D6" : "#9CA3AF"}
             />
           </TouchableOpacity>
         </View>

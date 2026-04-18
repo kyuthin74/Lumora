@@ -65,7 +65,11 @@ const AppNavigator: React.FC = () => {
       <Stack.Screen name="ForgotPassword" component={require('../screens/ForgotPassword').default} />
       <Stack.Screen name="VerifyCode" component={require('../screens/VerifyCode').default} />
       <Stack.Screen name="ResetPassword" component={require('../screens/ResetPassword').default} />
-      <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+      <Stack.Screen
+        name="MainTabs"
+        component={BottomTabNavigator}
+        options={{ gestureEnabled: false }}
+      />
     </Stack.Navigator>
   );
 };

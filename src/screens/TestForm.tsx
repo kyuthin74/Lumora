@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getApiBaseUrl } from "../config/api";
 import {
   View,
   Text,
@@ -18,10 +19,7 @@ import ScaleSelector from '../components/ScaleSelector';
 import YesNoToggle from '../components/YesNoToggle';
 import Button from '../components/Button';
 
-const API_BASE_URL =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:8000"
-    : "http://127.0.0.1:8000";
+const API_BASE_URL = getApiBaseUrl();
 
 interface DailyRiskResult {
   date: string;
@@ -183,6 +181,23 @@ const TestForm: React.FC = () => {
       if (response.ok) {
         const riskLevel = data.risk_level;
         const riskValue = data.risk_score;
+        const riskPercentage = Math.round(riskValue * 100);
+
+        try {
+          await AsyncStorage.setItem('latestDepressionPercent', riskPercentage.toString());
+        } catch (err) {
+          console.error('Failed to save depression percent to AsyncStorage', err);
+        }
+
+        let notificationMessage = '';
+        if (riskValue <= 0.3) {
+          notificationMessage = `Based on your recent entries, you have a low depression risk of ${riskPercentage}%. Keep up your positive habits and self-care practices.`;
+        } else if (riskValue <= 0.65) {
+          notificationMessage = `Based on your recent entries, you have a moderate depression risk of ${riskPercentage}%. Consider maintaining regular self-care and reaching out to friends or family.`;
+        } else {
+          notificationMessage = `Based on your recent entries, you have a high depression risk of ${riskPercentage}%. We strongly suggest you to take an appointment with a mental health professional.`;
+        }
+
         // Create notification for depression test result
         try {
           await fetch(`${API_BASE_URL}/notifications/`, {
@@ -194,7 +209,7 @@ const TestForm: React.FC = () => {
             body: JSON.stringify({
               type: "result",
               title: "Depression Test Result",
-              message: data.message || "Your latest assessment shows low risk.",
+              message: notificationMessage,
             }),
           });
         } catch (err) {

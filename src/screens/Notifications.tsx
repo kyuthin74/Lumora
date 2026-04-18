@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { getApiBaseUrl } from "../config/api";
 import { View, Text, ScrollView, TouchableOpacity, Platform, ActivityIndicator } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -8,10 +9,7 @@ import FontAwesome from "react-native-vector-icons/FontAwesome";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 
-const API_BASE_URL =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:8000"
-    : "http://127.0.0.1:8000";
+const API_BASE_URL = getApiBaseUrl();
 
 interface NotificationResponse {
   id: number;

@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { getApiBaseUrl } from "../config/api";
 import {
   View,
   Text,
@@ -86,10 +87,7 @@ const filterPastDays = (data: RiskPoint[], weekStartDate: string): RiskPoint[] =
   });
 };
 
-const API_BASE_URL =
-  Platform.OS === 'android'
-    ? 'http://10.0.2.2:8000'
-    : 'http://127.0.0.1:8000';
+const API_BASE_URL = getApiBaseUrl();
 
 const moodLegend = [
   {

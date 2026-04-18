@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getApiBaseUrl } from "../config/api";
 import { View, Text, TextInput, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { ScrollView } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -19,8 +20,7 @@ const ResetPassword: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const API_BASE_URL =
-    Platform.OS === "android" ? "http://10.0.2.2:8000" : "http://127.0.0.1:8000";
+  const API_BASE_URL = getApiBaseUrl();
 
   const handleResetPassword = async () => {
     if (password !== confirmPassword) {
