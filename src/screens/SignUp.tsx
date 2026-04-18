@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from "react";
+import { getApiBaseUrl } from "../config/api";
 import {
   View,
   Text,
@@ -17,12 +18,10 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import Icon from "react-native-vector-icons/Feather";
+import { initializePushNotificationsForSession } from "../services/pushNotifications";
 
 // Use Android emulator loopback when on Android
-const API_BASE_URL =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:8000"
-    : "http://127.0.0.1:8000";
+const API_BASE_URL = getApiBaseUrl();
 
 type SignUpScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -206,6 +205,12 @@ const SignUp = () => {
       // Store credentials in AsyncStorage
       await AsyncStorage.setItem("userId", userId);
       await AsyncStorage.setItem("authToken", token);
+
+      try {
+        await initializePushNotificationsForSession(token);
+      } catch (pushError) {
+        console.error("Push initialization failed after signup:", pushError);
+      }
 
       navigation.navigate("EmergencyContact", { userId, token });
     } catch (error) {

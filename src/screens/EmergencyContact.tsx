@@ -1,5 +1,6 @@
 // EmergencyContact.tsx
 import React, { useState } from "react";
+import { getApiBaseUrl } from "../config/api";
 import {
   View,
   Text,
@@ -15,10 +16,7 @@ import type { RootStackParamList } from "../navigation/AppNavigator";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import Button from "../components/Button";
 
-const API_BASE_URL =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:8000"
-    : "http://127.0.0.1:8000";
+const API_BASE_URL = getApiBaseUrl();
 
 const EmergencyContact: React.FC = () => {
   const [name, setName] = useState("");
@@ -75,7 +73,10 @@ const EmergencyContact: React.FC = () => {
       if (fromProfile) {
         navigation.goBack();
       } else {
-        navigation.replace("MainTabs");
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+        });
       }
     } catch (error) {
       const message =
@@ -96,7 +97,14 @@ const EmergencyContact: React.FC = () => {
       <ScrollView contentContainerClassName="flex-grow px-12 pt-10 pb-16">
         {!fromProfile && (
           <View className="flex-row justify-end mt-6 mb-6">
-            <TouchableOpacity onPress={() => navigation.replace("MainTabs")}>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+                })
+              }
+            >
               <Text className="text-gray-600 text-xl">Skip</Text>
             </TouchableOpacity>
           </View>

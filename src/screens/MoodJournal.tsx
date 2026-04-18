@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { getApiBaseUrl } from "../config/api";
 import { View, Text, TouchableOpacity, Image, TextInput, ScrollView, Alert, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
@@ -8,8 +9,7 @@ import Icon from "react-native-vector-icons/FontAwesome";
 import { ArrowLeft } from "lucide-react-native";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 
-const API_BASE_URL =
-  Platform.OS === "android" ? "http://10.0.2.2:8000" : "http://127.0.0.1:8000";
+const API_BASE_URL = getApiBaseUrl();
 
 const moods = [
   {

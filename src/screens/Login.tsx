@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from "react";
+import { getApiBaseUrl } from "../config/api";
 import {
   View,
   Text,
@@ -15,13 +16,9 @@ import Button from "../components/Button";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/AppNavigator";
+import { initializePushNotificationsForSession } from "../services/pushNotifications";
 
-const API_BASE_URL =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:8000"
-    : "http://127.0.0.1:8000";
-// const API_BASE_URL = "http://10.0.2.2:8000";
-
+const API_BASE_URL = getApiBaseUrl();
 // Check if user has emergency contact (returns true if exists)
 const checkEmergencyContactExists = async (token: string): Promise<boolean> => {
   try {
@@ -156,12 +153,21 @@ const Login = () => {
       await AsyncStorage.setItem("userId", userId);
       await AsyncStorage.setItem("authToken", token);
 
+      try {
+        await initializePushNotificationsForSession(token);
+      } catch (pushError) {
+        console.error("Push initialization failed after login:", pushError);
+      }
+
       // Check if user already has emergency contact
       const hasEmergencyContact = await checkEmergencyContactExists(token);
       
       if (hasEmergencyContact) {
-        // Skip emergency contact form, go directly to main app
-        navigation.replace("MainTabs", { screen: "Home" });
+        // Skip emergency contact form, make MainTabs the root to block back to auth screens
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+        });
       } else {
         // Show emergency contact form
         navigation.navigate("EmergencyContact", { userId, token });

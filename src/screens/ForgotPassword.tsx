@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getApiBaseUrl } from "../config/api";
 import { View, Text ,KeyboardAvoidingView, Platform } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,8 +15,7 @@ const ForgotPassword: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const API_BASE_URL =
-    Platform.OS === "android" ? "http://10.0.2.2:8000" : "http://127.0.0.1:8000";
+  const API_BASE_URL = getApiBaseUrl();
 
   const handleSendCode = async () => {
     setIsSubmitting(true);

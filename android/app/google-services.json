@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "465601017034",
+    "project_id": "lumora-3b66a",
+    "storage_bucket": "lumora-3b66a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:465601017034:android:bd779517357d6568373033",
+        "android_client_info": {
+          "package_name": "com.mentalhealthapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8WFK2sUjZq4VWHYoXg1ywPiUV-lgrJiE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
