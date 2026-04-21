@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { getApiBaseUrl } from "../config/api";
 import { View, Text, TouchableOpacity, Image, TextInput, ScrollView, Alert, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import Button from "../components/Button";
 import Icon from "react-native-vector-icons/FontAwesome";
@@ -82,6 +82,8 @@ type MoodJournalNavigationProp = NativeStackNavigationProp<
 
 const MoodJournal = () => {
   const navigation = useNavigation<MoodJournalNavigationProp>();
+  const route = useRoute<RouteProp<RootStackParamList, "MoodJournal">>();
+  const selectedDate = route.params?.selectedDate;
   const [selectedMood, setSelectedMood] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -128,7 +130,11 @@ const MoodJournal = () => {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/moods`, {
+      const moodSaveUrl = selectedDate
+        ? `${API_BASE_URL}/moods?selected_date=${encodeURIComponent(selectedDate)}`
+        : `${API_BASE_URL}/moods`;
+
+      const response = await fetch(moodSaveUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -138,6 +144,7 @@ const MoodJournal = () => {
           mood_type: moodLabel,
           activities: selectedActivityLabels,
           note: note.trim() || null,
+          selected_date: selectedDate,
         }),
       });
 
@@ -148,7 +155,11 @@ const MoodJournal = () => {
         throw new Error(message);
       }
 
-      navigation.navigate('MainTabs', { screen: 'Mood' });
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        navigation.navigate('MainTabs', { screen: 'Mood' });
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Please try again later.";
       Alert.alert("Save failed", message);

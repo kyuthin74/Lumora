@@ -592,7 +592,7 @@ const Mood: React.FC = () => {
 
       <TouchableOpacity
         className="absolute bottom-6 right-6 h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg"
-        onPress={() => navigation.navigate('MoodJournal')}
+        onPress={() => navigation.navigate('MoodJournal', { selectedDate })}
         activeOpacity={0.8}
       >
         <Icon name="plus" color="#FFFFFF" size={26} />

@@ -27,7 +27,7 @@ export type RootStackParamList = {
   LogMood: undefined;
   TestForm: { mood: string };
   HighRiskAlert: undefined;
-  MoodJournal: undefined;
+  MoodJournal: { selectedDate?: string } | undefined;
   MainTabs: NavigatorScreenParams<BottomTabParamList>;
   Nudge: { riskLevel: string; riskValue: number };
   AccountRemoved: undefined;
