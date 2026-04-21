@@ -67,7 +67,10 @@ const AccountManagement = ({ navigation }) => {
     } catch (err) {
       console.error('Error clearing AsyncStorage on logout:', err);
     }
-    navigation.navigate("Login");
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Login" }],
+    });
   };
 
   const handleDeleteConfirm = async () => {
