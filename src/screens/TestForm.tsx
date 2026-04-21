@@ -228,7 +228,7 @@ const TestForm: React.FC = () => {
           console.error('Error checking/sending emergency alert:', err);
         }
         
-        navigation.navigate('Nudge', { riskLevel, riskValue });
+        navigation.replace('Nudge', { riskLevel, riskValue });
       } else {
         console.error('Error submitting form:', data);
         console.error('Response status:', response.status);
