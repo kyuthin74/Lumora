@@ -21,7 +21,7 @@ import {
 } from './src/services/pushNotifications';
 import {
   flushPendingNavigation,
-  navigateToDepressionTestForm,
+  navigateToLogMood,
   navigationRef,
 } from './src/navigation/navigationRef';
 
@@ -50,14 +50,14 @@ function App(): React.JSX.Element {
     initializePushState();
 
     const unsubscribeNotificationTap = messaging().onNotificationOpenedApp(() => {
-      navigateToDepressionTestForm();
+      navigateToLogMood();
     });
 
     messaging()
       .getInitialNotification()
       .then((remoteMessage) => {
         if (remoteMessage) {
-          navigateToDepressionTestForm();
+          navigateToLogMood();
         }
       })
       .catch((error) => {

@@ -12,6 +12,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SendHorizonalIcon } from 'lucide-react-native';
+import { useIsFocused } from '@react-navigation/native';
 
 const WS_BASE_URL =
   Platform.OS === 'android' ? 'ws://10.0.2.2:8000/chatbot/ws' : 'ws://127.0.0.1:8000/chatbot/ws';
@@ -32,8 +33,10 @@ interface WebSocketMessage {
 
 const Chatbot: React.FC = () => {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const scrollViewRef = useRef<ScrollView>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const hasShownSocketErrorRef = useRef(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -46,7 +49,9 @@ const Chatbot: React.FC = () => {
 
   // Initialize WebSocket connection
   useEffect(() => {
-    if (!hasStarted) return;
+    if (!hasStarted || !isFocused) return;
+
+    hasShownSocketErrorRef.current = false;
 
     const initializeWebSocket = async () => {
       try {
@@ -104,16 +109,32 @@ const Chatbot: React.FC = () => {
         };
 
         ws.onerror = (error: WebSocketErrorEvent) => {
-          console.error('WebSocket error:', error);
+          console.warn('WebSocket connection error', {
+            readyState: ws.readyState,
+            url: ws.url,
+          });
           setIsConnected(false);
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: `${Date.now()}-error`,
-              text: 'Connection error. Please try again.',
-              isUser: false,
-            },
-          ]);
+
+          if (hasShownSocketErrorRef.current) {
+            return;
+          }
+
+          hasShownSocketErrorRef.current = true;
+          setMessages((prev) => {
+            const lastMessage = prev[prev.length - 1];
+            if (lastMessage && !lastMessage.isUser && lastMessage.text === 'Connection error. Please try again.') {
+              return prev;
+            }
+
+            return [
+              ...prev,
+              {
+                id: `${Date.now()}-error`,
+                text: 'Connection error. Please try again.',
+                isUser: false,
+              },
+            ];
+          });
         };
 
         ws.onclose = () => {
@@ -136,7 +157,7 @@ const Chatbot: React.FC = () => {
         wsRef.current = null;
       }
     };
-  }, [hasStarted]);
+  }, [hasStarted, isFocused]);
 
   const handleSend = async () => {
     const text = inputText.trim();
