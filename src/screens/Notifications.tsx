@@ -122,8 +122,12 @@ const Notifications: React.FC = () => {
   // Reload notifications and mark as read when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      markAllAsRead();
-      fetchNotifications();
+      const syncNotifications = async () => {
+        await markAllAsRead();
+        await fetchNotifications();
+      };
+
+      syncNotifications();
     }, [markAllAsRead, fetchNotifications])
   );
 

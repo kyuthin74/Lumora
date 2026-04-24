@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ActivityIndicator } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useIsFocused } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Button from '../components/Button';
@@ -12,6 +13,7 @@ interface Props {
 
 const SplashIntro: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const [isRestoringSession, setIsRestoringSession] = useState(true);
 
   useEffect(() => {
@@ -29,6 +31,11 @@ const SplashIntro: React.FC<Props> = ({ navigation }) => {
         }
 
         if (!isMounted) {
+          return;
+        }
+
+        // Avoid overriding navigation when app was opened from a push tap and route already changed.
+        if (!isFocused) {
           return;
         }
 
@@ -50,7 +57,7 @@ const SplashIntro: React.FC<Props> = ({ navigation }) => {
     return () => {
       isMounted = false;
     };
-  }, [navigation]);
+  }, [navigation, isFocused]);
 
   if (isRestoringSession) {
     return (

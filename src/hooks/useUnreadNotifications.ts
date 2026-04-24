@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { getApiBaseUrl } from "../config/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -40,6 +40,12 @@ export function useUnreadNotifications() {
     const interval = setInterval(fetchUnreadCount, 60000); // refresh every 60s
     return () => clearInterval(interval);
   }, [fetchUnreadCount]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchUnreadCount();
+    }, [fetchUnreadCount])
+  );
 
   return unreadCount;
 }

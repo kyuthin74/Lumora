@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Platform,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -91,7 +90,7 @@ const Home: React.FC = () => {
   const unreadCount = useUnreadNotifications();
   const [riskValue, setRiskValue] = useState<number | undefined>(route.params?.riskValue);
   const [riskLevel, setRiskLevel] = useState<string | undefined>(route.params?.riskLevel);
-  const [isLoadingRisk, setIsLoadingRisk] = useState(false);
+  const [_isLoadingRisk, setIsLoadingRisk] = useState(false);
   const [currentNudge, setCurrentNudge] = useState<string>("");
 
   useFocusEffect(

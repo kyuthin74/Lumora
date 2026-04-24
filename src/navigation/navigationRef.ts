@@ -3,7 +3,8 @@ import type { RootStackParamList } from "./AppNavigator";
 
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
-let pendingRouteNavigation: keyof RootStackParamList | null = null;
+type PendingPushRoute = "TestForm" | "Home";
+let pendingRouteNavigation: PendingPushRoute | null = null;
 
 export const navigateToDepressionTestForm = () => {
   if (!navigationRef.isReady()) {
@@ -14,13 +15,13 @@ export const navigateToDepressionTestForm = () => {
   navigationRef.navigate("TestForm", { mood: "neutral" });
 };
 
-export const navigateToLogMood = () => {
+export const navigateToHome = () => {
   if (!navigationRef.isReady()) {
-    pendingRouteNavigation = "LogMood";
+    pendingRouteNavigation = "Home";
     return;
   }
 
-  navigationRef.navigate("LogMood");
+  navigationRef.navigate("MainTabs", { screen: "Home" });
 };
 
 export const flushPendingNavigation = () => {
@@ -36,5 +37,5 @@ export const flushPendingNavigation = () => {
     return;
   }
 
-  navigationRef.navigate(routeName);
+  navigationRef.navigate("MainTabs", { screen: "Home" });
 };
