@@ -173,7 +173,8 @@ const Login = () => {
         navigation.navigate("EmergencyContact", { userId, token });
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Login error:", JSON.stringify(error.message));
+      console.log(error.text);
       const message =
         error instanceof Error
           ? error.message
