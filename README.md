@@ -67,7 +67,7 @@ npm run ios
 
 Lumora expects a separate backend for API calls such as depression risk scoring, push notification registration, notification history, and account workflows.
 
-- Backend repository: [Lumora backend](https://github.com/your-org/lumora-backend)
+- Backend repository: [Lumora backend](https://github.com/kyuthin74/lumora_backend)
 
 ## Project Structure
 
