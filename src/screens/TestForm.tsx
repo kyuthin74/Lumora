@@ -18,7 +18,6 @@ import SelectField from '../components/SelectField';
 import ScaleSelector from '../components/ScaleSelector';
 import YesNoToggle from '../components/YesNoToggle';
 import Button from '../components/Button';
-import { getDailyCheckInStorageKey, getLocalDateKey } from '../utils/dailyCheckIn';
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -127,41 +126,10 @@ const TestForm: React.FC = () => {
     null,
   );
   const [stressfulEvents, setStressfulEvents] = useState<boolean | null>(null);
-  const [isDailyCheckInCompleted, setIsDailyCheckInCompleted] = useState(false);
 
   const handleBack = () => navigation.navigate('LogMood');
 
-  React.useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const userId = await AsyncStorage.getItem('userId');
-
-        if (!userId) {
-          setIsDailyCheckInCompleted(false);
-          return;
-        }
-
-        const savedDate = await AsyncStorage.getItem(getDailyCheckInStorageKey(userId));
-        setIsDailyCheckInCompleted(savedDate === getLocalDateKey());
-      } catch (error) {
-        console.error('Error checking daily check-in status on test form:', error);
-        setIsDailyCheckInCompleted(false);
-      }
-    };
-
-    checkStatus();
-  }, []);
-
   const handleSubmit = async () => {
-    if (isDailyCheckInCompleted) {
-      Alert.alert(
-        'Already Completed',
-        'You have already taken today\'s check-in. It will be available again after midnight.',
-      );
-
-      return;
-    }
-
     setIsSubmitting(true);
     try {
         const userId = await AsyncStorage.getItem("userId");
@@ -217,10 +185,6 @@ const TestForm: React.FC = () => {
 
         try {
           await AsyncStorage.setItem('latestDepressionPercent', riskPercentage.toString());
-          if (userId) {
-            await AsyncStorage.setItem(getDailyCheckInStorageKey(userId), getLocalDateKey());
-          }
-          setIsDailyCheckInCompleted(true);
         } catch (err) {
           console.error('Failed to save depression percent to AsyncStorage', err);
         }
@@ -517,7 +481,6 @@ const TestForm: React.FC = () => {
       <View className="mb-4 mt-4">
         <Button
           disabled={
-            isDailyCheckInCompleted ||
             isSubmitting ||
             !sleepHours ||
             !appetite ||
@@ -534,7 +497,7 @@ const TestForm: React.FC = () => {
             !sleepiness ||
             !hopefulness
           }
-          title={isDailyCheckInCompleted ? 'Completed Today' : isSubmitting ? 'Submitting...' : 'Submit'}
+          title={isSubmitting ? 'Submitting...' : 'Submit'}
           onPress={handleSubmit}
           variant="primary"
         />

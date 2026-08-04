@@ -28,24 +28,6 @@ import { getRandomNudge } from '../utils/nudges';
 
 const API_BASE_URL = getApiBaseUrl();
 
-const getLocalDateKey = (date = new Date()) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-};
-
-const getDailyCheckInStorageKey = (userId: string) =>
-  `dailyCheckInCompletedDate_${userId}`;
-
-const getMillisecondsUntilNextLocalMidnight = (date = new Date()) => {
-  const nextMidnight = new Date(date);
-  nextMidnight.setHours(24, 0, 0, 0);
-
-  return nextMidnight.getTime() - date.getTime();
-};
-
 const allAffirmations = [
   "You are capable of amazing things. Every step forward is progress, no matter how small.",
   "You deserve care every day. With rest, movement, nourishment, and compassion, you lay the ground where confidence grows.",
@@ -101,7 +83,6 @@ const Home: React.FC = () => {
   const route = useRoute<RouteProp<BottomTabParamList, 'Home'>>();
   const [dailyAffirmations, setDailyAffirmations] = useState<string[]>([]);
   const [affirmationIndex, setAffirmationIndex] = useState(0);
-  const [isDailyCheckInCompleted, setIsDailyCheckInCompleted] = useState(false);
 
   useEffect(() => {
     setDailyAffirmations(getDailyAffirmations());
@@ -112,35 +93,8 @@ const Home: React.FC = () => {
   const [_isLoadingRisk, setIsLoadingRisk] = useState(false);
   const [currentNudge, setCurrentNudge] = useState<string>("");
 
-  const refreshDailyCheckInStatus = React.useCallback(async () => {
-    try {
-      const userId = await AsyncStorage.getItem('userId');
-
-      if (!userId) {
-        setIsDailyCheckInCompleted(false);
-        return;
-      }
-
-      const savedDate = await AsyncStorage.getItem(getDailyCheckInStorageKey(userId));
-      setIsDailyCheckInCompleted(savedDate === getLocalDateKey());
-    } catch (error) {
-      console.error('Error checking daily check-in status:', error);
-      setIsDailyCheckInCompleted(false);
-    }
-  }, []);
-
   useFocusEffect(
     React.useCallback(() => {
-      let midnightTimer: ReturnType<typeof setTimeout> | undefined;
-
-      const scheduleMidnightRefresh = () => {
-        const delay = getMillisecondsUntilNextLocalMidnight();
-        midnightTimer = setTimeout(async () => {
-          await refreshDailyCheckInStatus();
-          scheduleMidnightRefresh();
-        }, delay);
-      };
-
       const fetchNudge = async () => {
         try {
           const userId = await AsyncStorage.getItem('userId');
@@ -160,15 +114,7 @@ const Home: React.FC = () => {
       };
       
       fetchNudge();
-      refreshDailyCheckInStatus();
-      scheduleMidnightRefresh();
-
-      return () => {
-        if (midnightTimer) {
-          clearTimeout(midnightTimer);
-        }
-      };
-    }, [refreshDailyCheckInStatus, riskLevel])
+    }, [riskLevel])
   );
 
   // Fetch latest risk result from API
@@ -344,10 +290,9 @@ const Home: React.FC = () => {
               </Text>
             </View>
             <Button
-              title={isDailyCheckInCompleted ? 'Completed Today' : 'Start'}
+              title="Start"
               onPress={handleStartCheckIn}
               variant="short"
-              disabled={isDailyCheckInCompleted}
             />
           </View>
 

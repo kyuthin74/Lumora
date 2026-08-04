@@ -5,8 +5,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { ArrowLeft} from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getDailyCheckInStorageKey, getLocalDateKey } from "../utils/dailyCheckIn";
 
 const moods = [
   {
@@ -61,32 +59,10 @@ const moods = [
 
 const LogMood: React.FC = () => {
   const [selected, setSelected] = useState<number | null>(null);
-  const [isDailyCheckInCompleted, setIsDailyCheckInCompleted] = useState(false);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
       const handleBack = () => {
          navigation.navigate('MainTabs', { screen: 'Home' });
       }
-
-  React.useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const userId = await AsyncStorage.getItem('userId');
-
-        if (!userId) {
-          setIsDailyCheckInCompleted(false);
-          return;
-        }
-
-        const savedDate = await AsyncStorage.getItem(getDailyCheckInStorageKey(userId));
-        setIsDailyCheckInCompleted(savedDate === getLocalDateKey());
-      } catch (error) {
-        console.error('Error checking daily check-in status on mood screen:', error);
-        setIsDailyCheckInCompleted(false);
-      }
-    };
-
-    checkStatus();
-  }, []);
 
   const getSelectedMoodLabel = () => {
     const mood = moods.find(m => m.id === selected);
@@ -149,8 +125,8 @@ const LogMood: React.FC = () => {
       {/* Continue Button */}
       <View className="mt-14 items-center">
         <Button
-          title={isDailyCheckInCompleted ? "Completed Today" : "Continue"}
-          disabled={!selected || isDailyCheckInCompleted}
+          title="Continue"
+          disabled={!selected}
           onPress={() => navigation.navigate("TestForm", { mood: getSelectedMoodLabel() })}
           variant="primary"
         />
