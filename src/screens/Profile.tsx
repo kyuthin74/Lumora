@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, Platform, Alert, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationProp, useNavigation, useFocusEffect } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -62,6 +63,7 @@ interface UserProfileUpdateResponse {
 
 
 const Profile = () => {
+  const insets = useSafeAreaInsets();
   const tabNavigation = useNavigation<BottomTabNavigationProp<BottomTabParamList, "Profile">>();
   const rootNavigation = useMemo(() => {
     return tabNavigation.getParent<NavigationProp<RootStackParamList>>();
@@ -432,8 +434,8 @@ const Profile = () => {
   }
 
   return (
-    <>
-      <ScrollView className="flex-1 bg-background px-6 pt-12">
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
+      <ScrollView className="flex-1 bg-background px-6">
       {/* Page Title */}
       <View className="pt-4 pb-6" >
         <Text className="text-center text-2xl font-bold text-gray-900">Profile</Text>
@@ -607,7 +609,7 @@ const Profile = () => {
         onCancel={closeEditModal}
         onSave={handleEditSave}
       />
-    </>
+    </View>
   );
 };
 
