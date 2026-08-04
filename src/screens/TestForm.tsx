@@ -13,6 +13,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import SelectField from '../components/SelectField';
 import ScaleSelector from '../components/ScaleSelector';
@@ -103,6 +104,7 @@ const sendEmergencyAlert = async (
 };
 
 const TestForm: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'TestForm'>>();
@@ -263,8 +265,9 @@ const TestForm: React.FC = () => {
   };
 
   return (
+    <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
     <ScrollView
-      className="mb-12 flex-1 bg-gray-50 px-6 pt-6"
+      className="mb-12 flex-1 bg-gray-50 px-6"
       nestedScrollEnabled={true}
       contentContainerStyle={{ paddingBottom: 100 }}
     >
@@ -503,6 +506,7 @@ const TestForm: React.FC = () => {
         />
       </View>
     </ScrollView>
+    </View>
   );
 };
 

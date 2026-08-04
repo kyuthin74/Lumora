@@ -14,6 +14,7 @@ import {
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {
@@ -120,6 +121,7 @@ type MoodScreenNavigationProp = CompositeNavigationProp<
 >;
 
 const Mood: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<MoodScreenNavigationProp>();
   const [currentMonth, setCurrentMonth] = useState<Date>(() => {
     const today = new Date();
@@ -418,7 +420,7 @@ const Mood: React.FC = () => {
   
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 bg-background" style={{ paddingTop: insets.top }}>
       <ScrollView
         contentContainerClassName="pb-28"
         showsVerticalScrollIndicator={false}
@@ -431,7 +433,7 @@ const Mood: React.FC = () => {
           />
         }
       >
-        <View className="px-6 pt-12">
+        <View className="px-6">
          <View className="pt-4">
           <Text className="text-center text-2xl font-bold text-gray-900">Mood Diary</Text>
                    <Text className="mt-1 text-center text-base text-gray-600">

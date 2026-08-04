@@ -5,6 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { ArrowLeft} from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const moods = [
   {
@@ -59,6 +60,7 @@ const moods = [
 
 const LogMood: React.FC = () => {
   const [selected, setSelected] = useState<number | null>(null);
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
       const handleBack = () => {
          navigation.navigate('MainTabs', { screen: 'Home' });
@@ -70,7 +72,8 @@ const LogMood: React.FC = () => {
   };
 
   return (
-    <ScrollView className="flex-1 bg-gray-50 px-6 pt-6">
+    <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
+    <ScrollView className="flex-1 bg-gray-50 px-6">
       {/* Back Button */}
       <TouchableOpacity
         onPress={handleBack}
@@ -132,6 +135,7 @@ const LogMood: React.FC = () => {
         />
       </View>
     </ScrollView>
+    </View>
   );
 };
 

@@ -20,6 +20,7 @@ import Svg, {
 } from 'react-native-svg';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 
 interface RiskPoint {
@@ -375,6 +376,7 @@ const analysisStyles = StyleSheet.create({
 });
 
 const Analysis: React.FC = () => {
+  const insets = useSafeAreaInsets();
   const [layoutWidth, setLayoutWidth] = useState(0);
   const [riskWeekIndex, setRiskWeekIndex] = useState(0);
   const [weeklyRiskHistory, setWeeklyRiskHistory] = useState<WeeklyRiskData[]>([]);
@@ -766,8 +768,9 @@ const Analysis: React.FC = () => {
   };
 
   return (
+    <View className="flex-1 bg-[#f3f6fb]" style={{ paddingTop: insets.top }}>
     <ScrollView className="flex-1 bg-[#f3f6fb]">
-      <View className="px-6 pt-12">
+      <View className="px-6">
         <View className="items-center pt-4">
           <Text className="text-2xl font-bold text-gray-900">
             Weekly Analysis
@@ -1020,6 +1023,7 @@ const Analysis: React.FC = () => {
         </View>
       </View>
     </ScrollView>
+    </View>
   );
 };
 
