@@ -24,6 +24,12 @@ import {
   navigateToHome,
   navigationRef,
 } from './src/navigation/navigationRef';
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false, // disables the strict mode warnings
+});
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
