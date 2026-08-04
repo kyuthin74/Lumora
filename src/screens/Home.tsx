@@ -342,7 +342,7 @@ const Home: React.FC = () => {
               </Text>
             </View>
             <Button
-              title={isDailyCheckInCompleted ? 'Completed Today' : 'Start'}
+              title={isDailyCheckInCompleted ? 'Completed' : 'Start'}
               onPress={handleStartCheckIn}
               variant="short"
               disabled={isDailyCheckInCompleted}

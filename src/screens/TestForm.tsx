@@ -536,7 +536,7 @@ const TestForm: React.FC = () => {
             !sleepiness ||
             !hopefulness
           }
-           title={isDailyCheckInCompleted ? 'Completed Today' : isSubmitting ? 'Submitting...' : 'Submit'}
+           title={isDailyCheckInCompleted ? 'Completed' : isSubmitting ? 'Submitting...' : 'Submit'}
           onPress={handleSubmit}
           variant="primary"
         />
