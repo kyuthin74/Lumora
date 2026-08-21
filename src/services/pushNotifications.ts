@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import messaging from "@react-native-firebase/messaging";
 import { PermissionsAndroid, Platform } from "react-native";
+import { handleUnauthorized } from "../utils/authSession";
 
 const API_BASE_URL =
   Platform.OS === "android"
@@ -127,6 +128,9 @@ export const registerFcmToken = async (
   );
 
   if (!response.ok) {
+    if (response.status === 401) {
+      await handleUnauthorized();
+    }
     const errorData = await response.json().catch(() => ({}));
     throw new Error(
       (errorData && (errorData.message || errorData.detail)) ||
@@ -135,12 +139,46 @@ export const registerFcmToken = async (
   }
 };
 
-export const syncCurrentFcmToken = async (authToken: string): Promise<void> => {
-  const token = await messaging().getToken();
-  if (!token) {
-    throw new Error("Failed to get FCM token");
-  }
+// FCM rejects a stale device installation with these codes instead of a clean
+// "token expired" signal, and getToken() surfaces them as messaging/unknown.
+const RECOVERABLE_TOKEN_ERROR =
+  /AUTHENTICATION_FAILED|SERVICE_NOT_AVAILABLE|INTERNAL_SERVER_ERROR|TOO_MANY_REGISTRATIONS/i;
 
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const getFcmTokenWithRecovery = async (): Promise<string> => {
+  try {
+    const token = await messaging().getToken();
+    if (token) {
+      return token;
+    }
+    throw new Error("Failed to get FCM token");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!RECOVERABLE_TOKEN_ERROR.test(message)) {
+      throw error;
+    }
+
+    // Drop the rejected installation so the next request re-registers the device.
+    try {
+      await messaging().deleteToken();
+    } catch (deleteError) {
+      console.warn("Failed to drop stale FCM token before retry:", deleteError);
+    }
+
+    await delay(1000);
+
+    const retriedToken = await messaging().getToken();
+    if (!retriedToken) {
+      throw new Error("Failed to get FCM token");
+    }
+
+    return retriedToken;
+  }
+};
+
+export const syncCurrentFcmToken = async (authToken: string): Promise<void> => {
+  const token = await getFcmTokenWithRecovery();
   await registerFcmToken(authToken, token);
 };
 
@@ -153,6 +191,9 @@ export const fetchPushNotificationStatus = async (
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      await handleUnauthorized();
+    }
     const errorData = await response.json().catch(() => ({}));
     throw new Error(
       (errorData && (errorData.message || errorData.detail)) ||
@@ -182,6 +223,9 @@ export const updateDailyReminderPreference = async (
   );
 
   if (!response.ok) {
+    if (response.status === 401) {
+      await handleUnauthorized();
+    }
     const errorData = await response.json().catch(() => ({}));
     throw new Error(
       (errorData && (errorData.message || errorData.detail)) ||
@@ -264,7 +308,12 @@ export const deleteRegisteredPushToken = async (authToken: string): Promise<void
 export const initializePushNotificationsForSession = async (
   authToken: string
 ): Promise<void> => {
-  await ensurePushTokenRegistrationForSession(authToken);
+  try {
+    await ensurePushTokenRegistrationForSession(authToken);
+  } catch (error) {
+    // Device-side FCM failures must not block the rest of the session setup.
+    console.error("Failed to register FCM token for session:", error);
+  }
 
   const status = await fetchPushNotificationStatus(authToken);
   const syncedStatus = await restorePreferredDailyReminderIfNeeded(authToken, status);
