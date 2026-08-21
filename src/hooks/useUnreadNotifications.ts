@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { getApiBaseUrl } from "../config/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
+import { handleUnauthorized } from "../utils/authSession";
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -22,6 +23,11 @@ export function useUnreadNotifications() {
         },
       });
       if (!response.ok) {
+        if (response.status === 401) {
+          setUnreadCount(0);
+          await handleUnauthorized();
+          return;
+        }
         setUnreadCount(0);
         return;
       }
