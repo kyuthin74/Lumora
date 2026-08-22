@@ -186,7 +186,10 @@ const Notifications: React.FC = () => {
 
       {/* Success popup */}
       {deleteSuccess && (
-        <View className="absolute top-4 left-0 right-0 items-center z-50">
+        <View
+          className="absolute inset-0 items-center justify-center z-50"
+          pointerEvents="none"
+        >
           <View className="bg-black/80 px-4 py-2 rounded-xl">
             <Text className="text-white text-sm">Notification deleted</Text>
           </View>
