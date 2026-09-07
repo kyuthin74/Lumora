@@ -520,6 +520,7 @@ const Mood: React.FC = () => {
                 <View
                   key={entry.id}
                   className="mb-1 rounded-xl border border-primary-200 bg-primary-100 px-4 py-4 shadow-sm relative"
+                  style={styles.entryCard}
                 >
                   <TouchableOpacity
                     style={styles.deleteButton}
@@ -565,7 +566,10 @@ const Mood: React.FC = () => {
                         </View>
                       </View>
                       {entry.note ? (
-                        <Text className="mt-3 text-sm text-gray-800" numberOfLines={3}>
+                        <Text
+                          className="mt-3 text-sm text-gray-800"
+                          style={styles.noteText}
+                        >
                           {entry.note}
                         </Text>
                       ) : (
@@ -623,6 +627,12 @@ const styles = StyleSheet.create({
   },
   dayTextOutside: {
     color: '#BFDBFE',
+  },
+  entryCard: {
+    paddingBottom: 30,
+  },
+  noteText: {
+    flexWrap: 'wrap',
   },
   avatarColumn: {
     width: 64,
