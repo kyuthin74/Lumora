@@ -153,7 +153,7 @@ const LogMood: React.FC = () => {
       {/* Continue Button */}
       <View className="mt-14 items-center">
         <Button
-          title={isDailyCheckInCompleted ? "Completed" : "Continue"}
+          title={isDailyCheckInCompleted ? "Completed" : "Next"}
           disabled={!selected || isDailyCheckInCompleted}
           onPress={() => navigation.navigate("TestForm", { mood: getSelectedMoodLabel() })}
           variant="primary"

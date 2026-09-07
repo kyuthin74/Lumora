@@ -15,7 +15,7 @@ import type { RootStackParamList } from '../navigation/AppNavigator';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import SelectField from '../components/SelectField';
+import RadioGroup from '../components/RadioGroup';
 import ScaleSelector from '../components/ScaleSelector';
 import YesNoToggle from '../components/YesNoToggle';
 import Button from '../components/Button';
@@ -112,7 +112,7 @@ const TestForm: React.FC = () => {
   const { mood } = route.params;
   const [energy, setEnergy] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState(0);
 
   const [sleepHours, setSleepHours] = useState<string | null>(null);
   const [appetite, setAppetite] = useState<string | null>(null);
@@ -131,7 +131,6 @@ const TestForm: React.FC = () => {
   const [stressfulEvents, setStressfulEvents] = useState<boolean | null>(null);
   const [isDailyCheckInCompleted, setIsDailyCheckInCompleted] = useState(false);
 
-  const handleBack = () => navigation.navigate('LogMood');
   React.useEffect(() => {
     const checkStatus = async () => {
       try {
@@ -299,249 +298,262 @@ const TestForm: React.FC = () => {
     }
   };
 
+  type Step =
+    | {
+        id: string;
+        type: 'select';
+        question: string;
+        options: string[];
+        value: string | null;
+        onSelect: (v: string) => void;
+      }
+    | {
+        id: string;
+        type: 'scale';
+        question: string;
+        minLabel: string;
+        maxLabel: string;
+        value: number | null;
+        onSelect: (v: number) => void;
+      }
+    | {
+        id: string;
+        type: 'yesno';
+        question: string;
+        value: boolean | null;
+        onSelect: (v: boolean) => void;
+      };
+
+  const steps: Step[] = [
+    {
+      id: 'sleepHours',
+      type: 'select',
+      question: 'How many hours did you sleep last night?',
+      options: ['Less than 4 hours', '4-5 hours', '6-7 hours', '8 or more hours'],
+      value: sleepHours,
+      onSelect: setSleepHours,
+    },
+    {
+      id: 'appetite',
+      type: 'select',
+      question: 'How is your appetite today?',
+      options: ['Less than usual', 'Usual', 'More than usual'],
+      value: appetite,
+      onSelect: setAppetite,
+    },
+    {
+      id: 'exerciseHours',
+      type: 'select',
+      question:
+        'How many hours did you spend doing physical activity or exercise today?',
+      options: [
+        'None',
+        'Less than 30 minutes',
+        '30 - 60 minutes',
+        'More than 60 minutes',
+      ],
+      value: exerciseHours,
+      onSelect: setExerciseHours,
+    },
+    {
+      id: 'screenHours',
+      type: 'select',
+      question: 'How many hours did you spend on screens (phone, computer, TV)?',
+      options: ['Less than 2 hours', '2-4 hours', '5-7 hours', '7 or more hours'],
+      value: screenHours,
+      onSelect: setScreenHours,
+    },
+    {
+      id: 'studyHours',
+      type: 'select',
+      question: 'How many hours did you spend on academic work?',
+      options: ['Less than 4 hours', '4 - 5 hours', '6 - 7 hours', '8 or more hours'],
+      value: studyHours,
+      onSelect: setStudyHours,
+    },
+    {
+      id: 'socializeAmount',
+      type: 'select',
+      question: 'How much did you socialize today?',
+      options: ['Very little', 'Moderate', 'High', 'Very high'],
+      value: socializeAmount,
+      onSelect: setSocializeAmount,
+    },
+    {
+      id: 'energy',
+      type: 'scale',
+      question: 'How was your energy level today?',
+      minLabel: 'Very Low',
+      maxLabel: 'Very High',
+      value: energy,
+      onSelect: setEnergy,
+    },
+    {
+      id: 'concentration',
+      type: 'select',
+      question: 'How much have you had trouble concentrating on daily activities?',
+      options: ['Not at all', 'Several times a day', 'Half of the day', 'All day'],
+      value: concentration,
+      onSelect: setConcentration,
+    },
+    {
+      id: 'negativeThoughts',
+      type: 'yesno',
+      question: 'Did you have any negative thoughts about yourself today?',
+      value: negativeThoughts,
+      onSelect: setNegativeThoughts,
+    },
+    {
+      id: 'clarity',
+      type: 'select',
+      question: 'How clear was your thinking and decision-making today?',
+      options: ['Clear', 'Normal', 'A little foggy', 'Foggy'],
+      value: clarity,
+      onSelect: setClarity,
+    },
+    {
+      id: 'bothered',
+      type: 'yesno',
+      question:
+        "Did you feel bothered by things that normally wouldn't bother you today?",
+      value: bothered,
+      onSelect: setBothered,
+    },
+    {
+      id: 'stressfulEvents',
+      type: 'yesno',
+      question: 'Did you experience any stressful events today?',
+      value: stressfulEvents,
+      onSelect: setStressfulEvents,
+    },
+    {
+      id: 'sleepiness',
+      type: 'select',
+      question: 'How sleepy or tired did you feel during the day?',
+      options: ['Not at all', 'A little', 'Moderately', 'Very sleepy or tired'],
+      value: sleepiness,
+      onSelect: setSleepiness,
+    },
+    {
+      id: 'hopefulness',
+      type: 'select',
+      question: 'How hopeful did you feel about the future today?',
+      options: ['Very hopeful', 'Somewhat hopeful', 'Not very hopeful', 'No hope at all'],
+      value: hopefulness,
+      onSelect: setHopefulness,
+    },
+  ];
+
+  const totalSteps = steps.length;
+  const currentQuestion = steps[currentStep];
+  const isLastStep = currentStep === totalSteps - 1;
+  const isCurrentAnswered = currentQuestion.value !== null;
+
+  const goToPreviousStep = () => {
+    if (currentStep === 0) {
+      navigation.navigate('LogMood');
+    } else {
+      setCurrentStep((s) => s - 1);
+    }
+  };
+
+  const goToNextStep = () => {
+    if (!isCurrentAnswered) return;
+    if (isLastStep) {
+      handleSubmit();
+    } else {
+      setCurrentStep((s) => s + 1);
+    }
+  };
+
   return (
     <View className="flex-1 bg-gray-50" style={{ paddingTop: insets.top }}>
-    <ScrollView
-      className="mb-12 flex-1 bg-gray-50 px-6"
-      nestedScrollEnabled={true}
-      contentContainerStyle={{ paddingBottom: 100 }}
-    >
-      {/* Back Button */}
-      <TouchableOpacity
-        onPress={handleBack}
-        className="mb-2 mt-6 flex-row items-center"
+      {/* Header + Progress */}
+      <View className="px-6 pb-4 pt-6">
+        <TouchableOpacity
+          onPress={goToPreviousStep}
+          className="mb-4 flex-row items-center"
+        >
+          <ArrowLeft size={24} color="#4B5563" />
+          <Text className="ml-2 text-lg text-gray-700">Back</Text>
+        </TouchableOpacity>
+
+        <Text className="mb-2 text-sm font-medium text-gray-500">
+          Question {currentStep + 1} of {totalSteps}
+        </Text>
+        <View className="h-2 overflow-hidden rounded-full bg-gray-200">
+          <View
+            className="h-2 rounded-full bg-primary"
+            style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
+          />
+        </View>
+      </View>
+
+      <ScrollView
+        className="flex-1 px-6"
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
       >
-        <ArrowLeft size={24} color="#4B5563" />
-        <Text className="ml-2 text-lg text-gray-700">Back</Text>
-      </TouchableOpacity>
+        <View
+          className="mt-2 rounded-3xl border border-gray-100 bg-white p-6"
+          style={{
+            shadowColor: '#000',
+            shadowOpacity: 0.18,
+            shadowOffset: { width: 0, height: 4 },
+            shadowRadius: 8,
+            elevation: 6,
+          }}
+        >
+          <Text className="mb-6 text-xl font-bold text-gray-800">
+            {currentQuestion.question}
+          </Text>
 
-      {/* Header */}
-      <Text className="mb-2 text-center text-2xl font-bold text-gray-800">
-        Log Your Mood
-      </Text>
-      <Text className="mb-6 text-center text-gray-600">
-        Select your current mood and share your thoughts
-      </Text>
+          {currentQuestion.type === 'select' && (
+            <RadioGroup
+              options={currentQuestion.options}
+              value={currentQuestion.value}
+              onSelect={currentQuestion.onSelect}
+            />
+          )}
 
-      {/* FORM FIELDS - each SelectField receives value/options/onSelect */}
-      <SelectField
-        label="How many hours did you sleep last night?"
-        value={sleepHours}
-        options={[
-          'Less than 4 hours',
-          '4-5 hours',
-          '6-7 hours',
-          '8 or more hours',
-        ]}
-        onSelect={setSleepHours}
-        isOpen={openDropdown === 'sleepHours'}
-        onToggle={() =>
-          setOpenDropdown(openDropdown === 'sleepHours' ? null : 'sleepHours')
-        }
-      />
+          {currentQuestion.type === 'scale' && (
+            <ScaleSelector
+              value={currentQuestion.value ?? 0}
+              onChange={currentQuestion.onSelect}
+              minLabel={currentQuestion.minLabel}
+              maxLabel={currentQuestion.maxLabel}
+            />
+          )}
 
-      <SelectField
-        label="How is your appetite today?"
-        value={appetite}
-        options={['Less than usual', 'Usual', 'More than usual']}
-        onSelect={setAppetite}
-        isOpen={openDropdown === 'appetite'}
-        onToggle={() =>
-          setOpenDropdown(openDropdown === 'appetite' ? null : 'appetite')
-        }
-      />
+          {currentQuestion.type === 'yesno' && (
+            <YesNoToggle
+              value={currentQuestion.value}
+              onChange={currentQuestion.onSelect}
+            />
+          )}
+        </View>
 
-      <SelectField
-        label="How many hours did you spend doing physical activity or exercise today?"
-        value={exerciseHours}
-        options={[
-          'None',
-          'Less than 30 minutes',
-          '30 - 60 minutes',
-          'More than 60 minutes',
-        ]}
-        onSelect={setExerciseHours}
-        dropdownOffset={100}
-        isOpen={openDropdown === 'exerciseHours'}
-        onToggle={() =>
-          setOpenDropdown(
-            openDropdown === 'exerciseHours' ? null : 'exerciseHours',
-          )
-        }
-      />
-
-      <SelectField
-        label="How many hours did you spend on screens (phone, computer, TV)?"
-        value={screenHours}
-        options={[
-          'Less than 2 hours',
-          '2-4 hours',
-          '5-7 hours',
-          '7 or more hours',
-        ]}
-        onSelect={setScreenHours}
-        dropdownOffset={105}
-        isOpen={openDropdown === 'screenHours'}
-        onToggle={() =>
-          setOpenDropdown(openDropdown === 'screenHours' ? null : 'screenHours')
-        }
-      />
-
-      <SelectField
-        label="How many hours did you spend on academic work?"
-        value={studyHours}
-        options={[
-          'Less than 4 hours',
-          '4 - 5 hours',
-          '6 - 7 hours',
-          '8 or more hours',
-        ]}
-        onSelect={setStudyHours}
-        dropdownOffset={80}
-        isOpen={openDropdown === 'studyHours'}
-        onToggle={() =>
-          setOpenDropdown(openDropdown === 'studyHours' ? null : 'studyHours')
-        }
-      />
-
-      <SelectField
-        label="How much did you socialize today?"
-        value={socializeAmount}
-        options={['Very little', 'Moderate', 'High', 'Very high']}
-        onSelect={setSocializeAmount}
-        isOpen={openDropdown === 'socializeAmount'}
-        onToggle={() =>
-          setOpenDropdown(
-            openDropdown === 'socializeAmount' ? null : 'socializeAmount',
-          )
-        }
-      />
-
-      {/* SCALE SELECTOR */}
-      <Text className="mb-3 mt-2 text-base font-semibold text-gray-700">
-        How was your energy level today?
-      </Text>
-      <ScaleSelector
-        value={energy!}
-        onChange={setEnergy}
-        minLabel="Very Low"
-        maxLabel="Very High"
-      />
-
-      <SelectField
-        label="How much have you had trouble concentrating on daily activities?"
-        value={concentration}
-        options={[
-          'Not at all',
-          'Several times a day',
-          'Half of the day',
-          'All day',
-        ]}
-        onSelect={setConcentration}
-        dropdownOffset={100}
-        isOpen={openDropdown === 'concentration'}
-        onToggle={() =>
-          setOpenDropdown(
-            openDropdown === 'concentration' ? null : 'concentration',
-          )
-        }
-      />
-
-      {/* YES / NO */}
-      <View className="mb-3 mt-3">
-        <Text className="mb-3 mt-2 text-base  font-semibold text-gray-700">
-          Did you have any negative thoughts about yourself today?
-        </Text>
-        <YesNoToggle value={negativeThoughts} onChange={setNegativeThoughts} />
-      </View>
-
-      <SelectField
-        label="How clear was your thinking and decision-making today?"
-        value={clarity}
-        options={['Clear', 'Normal', 'A little foggy', 'Foggy']}
-        onSelect={setClarity}
-        dropdownOffset={80}
-        isOpen={openDropdown === 'clarity'}
-        onToggle={() =>
-          setOpenDropdown(openDropdown === 'clarity' ? null : 'clarity')
-        }
-      />
-
-      {/* YES / NO */}
-      <View className="mb-3 mt-3">
-        <Text className="mb-3 mt-2 text-base  font-semibold text-gray-700">
-          Did you feel bothered by things that normally wouldn't bother you
-          today?
-        </Text>
-        <YesNoToggle value={bothered} onChange={setBothered} />
-      </View>
-
-      <View className="mb-3 mt-3">
-        <Text className="mb-3 mt-2 text-base  font-semibold text-gray-700">
-          Did you experience any stressful events today?
-        </Text>
-        <YesNoToggle value={stressfulEvents} onChange={setStressfulEvents} />
-      </View>
-
-      <SelectField
-        label="How sleepy or tired did you feel during the day?"
-        value={sleepiness}
-        options={[
-          'Not at all',
-          'A little',
-          'Moderately',
-          'Very sleepy or tired',
-        ]}
-        onSelect={setSleepiness}
-        isOpen={openDropdown === 'sleepiness'}
-        onToggle={() =>
-          setOpenDropdown(openDropdown === 'sleepiness' ? null : 'sleepiness')
-        }
-      />
-
-      <SelectField
-        label="How hopeful did you feel about the future today?"
-        value={hopefulness}
-        options={[
-          'Very hopeful',
-          'Somewhat hopeful',
-          'Not very hopeful',
-          'No hope at all',
-        ]}
-        onSelect={setHopefulness}
-        isOpen={openDropdown === 'hopefulness'}
-        onToggle={() =>
-          setOpenDropdown(openDropdown === 'hopefulness' ? null : 'hopefulness')
-        }
-      />
-
-      {/* SUBMIT */}
-      <View className="mb-4 mt-4">
-        <Button
-          disabled={
-            isDailyCheckInCompleted ||
-            isSubmitting ||
-            !sleepHours ||
-            !appetite ||
-            !exerciseHours ||
-            !screenHours ||
-            !studyHours ||
-            !socializeAmount ||
-            energy === null ||
-            !concentration ||
-            negativeThoughts === null ||
-            !clarity ||
-            bothered === null ||
-            stressfulEvents === null ||
-            !sleepiness ||
-            !hopefulness
-          }
-           title={isDailyCheckInCompleted ? 'Completed' : isSubmitting ? 'Submitting...' : 'Submit'}
-          onPress={handleSubmit}
-          variant="primary"
-        />
-      </View>
-    </ScrollView>
+        {/* NEXT / SUBMIT */}
+        <View className="mt-6">
+          <Button
+            disabled={
+              !isCurrentAnswered ||
+              (isLastStep && (isSubmitting || isDailyCheckInCompleted))
+            }
+            title={
+              isLastStep
+                ? isDailyCheckInCompleted
+                  ? 'Completed'
+                  : isSubmitting
+                  ? 'Submitting...'
+                  : 'Submit'
+                : 'Next'
+            }
+            onPress={goToNextStep}
+            variant="primary"
+          />
+        </View>
+      </ScrollView>
     </View>
   );
 };
