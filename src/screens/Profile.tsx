@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Platform, Alert, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationProp, useNavigation, useFocusEffect } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
@@ -9,6 +9,7 @@ import ProfileInput from "../components/ProfileInput";
 import ConfirmModal from "../components/ConfirmModal";
 import EditProfile from "../components/EditProfile";
 import AccountManagementCard from "../components/AccountManagementCard";
+import { getApiBaseUrl } from "../config/api";
 import { RootStackParamList } from "../navigation/AppNavigator";
 import { BottomTabParamList } from "../navigation/BottomTabNavigator";
 import {
@@ -17,10 +18,7 @@ import {
   updateDailyReminderPreference,
 } from "../services/pushNotifications";
 
-const API_BASE_URL =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:8000"
-    : "http://127.0.0.1:8000";
+const API_BASE_URL = getApiBaseUrl();
 
 // Retrieve credentials from AsyncStorage
 const getUserCredentials = async (): Promise<{ userId: string | null; token: string | null }> => {

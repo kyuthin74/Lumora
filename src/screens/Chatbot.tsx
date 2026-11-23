@@ -13,11 +13,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SendHorizonalIcon } from 'lucide-react-native';
 import { useIsFocused } from '@react-navigation/native';
+import { getApiBaseUrl, WS_BASE_URL as WS_ROOT_URL } from '../config/api';
 
-const WS_BASE_URL =
-  Platform.OS === 'android' ? 'ws://10.0.2.2:8000/chatbot/ws' : 'ws://127.0.0.1:8000/chatbot/ws';
-const API_BASE_URL =
-  Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://127.0.0.1:8000';
+const API_BASE_URL = getApiBaseUrl();
+const WS_BASE_URL = `${WS_ROOT_URL}/chatbot/ws`;
 interface Message {
   id: string;
   text: string;

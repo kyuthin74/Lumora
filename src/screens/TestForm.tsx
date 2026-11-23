@@ -196,7 +196,6 @@ const TestForm: React.FC = () => {
       };
 
       const response = await fetch(
-        // 'https://lumora-backend-6utw.onrender.com/predict_depression_risk/',
         `${API_BASE_URL}/depression-test`,
         {
           method: 'POST',

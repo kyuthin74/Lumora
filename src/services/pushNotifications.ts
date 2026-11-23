@@ -1,12 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import messaging from "@react-native-firebase/messaging";
 import { PermissionsAndroid, Platform } from "react-native";
+import { getApiBaseUrl } from "../config/api";
 import { handleUnauthorized } from "../utils/authSession";
 
-const API_BASE_URL =
-  Platform.OS === "android"
-    ? "http://10.0.2.2:8000"
-    : "http://127.0.0.1:8000";
+const API_BASE_URL = getApiBaseUrl();
 
 export const PUSH_STATUS_STORAGE_KEY = "dailyReminderEnabled";
 export const PUSH_PREFERRED_STORAGE_KEY = "dailyReminderPreferredEnabled";

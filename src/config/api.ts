@@ -1,7 +1,4 @@
-import { Platform } from "react-native";
+export const API_BASE_URL = "https://lumora-backend-ba9s.onrender.com";
+export const WS_BASE_URL = API_BASE_URL.replace(/^http/, "ws");
 
-export const getApiBaseUrl = (): string => {
-  return Platform.OS === "android"
-    ? "http://10.0.2.2:8000"
-    : "http://127.0.0.1:8000";
-};
+export const getApiBaseUrl = (): string => API_BASE_URL;
