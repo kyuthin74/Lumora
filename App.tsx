@@ -18,6 +18,7 @@ import {
   attachFcmTokenRefreshListener,
   loadPushStatusForSession,
   registerFcmToken,
+  UnauthorizedError,
 } from './src/services/pushNotifications';
 import {
   flushPendingNavigation,
@@ -48,7 +49,10 @@ function App(): React.JSX.Element {
       try {
         await loadPushStatusForSession(authToken);
       } catch (error) {
-        // Push status should never force a logout; keep session intact.
+        // Expired token: session was already cleared and user sent to Login.
+        if (error instanceof UnauthorizedError) {
+          return;
+        }
         console.error('Failed to load push notification status on app start:', error);
       }
     };

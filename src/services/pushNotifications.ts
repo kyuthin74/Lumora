@@ -79,6 +79,14 @@ const parsePushStatus = (
   };
 };
 
+/** Thrown after a 401 has already cleared the session and redirected to Login. */
+export class UnauthorizedError extends Error {
+  constructor() {
+    super("Session expired");
+    this.name = "UnauthorizedError";
+  }
+}
+
 const authHeaders = (authToken: string, includeJson = false) => {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${authToken}`,
@@ -191,6 +199,7 @@ export const fetchPushNotificationStatus = async (
   if (!response.ok) {
     if (response.status === 401) {
       await handleUnauthorized();
+      throw new UnauthorizedError();
     }
     const errorData = await response.json().catch(() => ({}));
     throw new Error(
